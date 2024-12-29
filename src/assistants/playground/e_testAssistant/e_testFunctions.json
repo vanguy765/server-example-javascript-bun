@@ -1,0 +1,57 @@
+{
+    "functions": [
+      {
+        "name": "sendSms",
+        "description": "Sends order details by SMS text so the details can be confirmed by the customer.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "createOrder",
+        "description": "creates an order in the database",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customerID": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "lineItems": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }

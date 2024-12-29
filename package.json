@@ -1,11 +1,15 @@
 {
   "scripts": {
-    "start": "bun --env-file=.env run --hot src/index.ts"
+    "start": "bun --env-file=.env run --hot src/index.ts",
+    "dev": "nodemon --watch src --exec bun run src/index.ts"
   },
   "dependencies": {
-    "hono": "^3.12.8",
+    "hono": "^4.6.14",
+    "jmespath": "^0.16.0",
     "llamaindex": "^0.1.9",
-    "openai": "^4.26.1"
+    "nodemon": "^3.1.9",
+    "openai": "^4.26.1",
+    "twilio": "^5.4.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

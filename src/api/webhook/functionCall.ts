@@ -1,5 +1,19 @@
-import defaultFunctions from "../../functions";
+// src/api/webhook/functionCall.ts
+
+import functionsDefault from "../../functions";
+import functionsSms from "../../functionsSms";
 import { FunctionCallPayload } from "../../types/vapi.types";
+
+// import functionsDb from "../../functionsDb";
+// const defaultFunctions = {
+//   ...functionsDefault,
+//   ...functionsDb,
+//   ...functionsSms,
+// };
+const defaultFunctions = {
+  ...functionsDefault,
+  ...functionsSms,
+};
 
 export const functionCallHandler = async (
   payload: FunctionCallPayload,
@@ -20,7 +34,12 @@ export const functionCallHandler = async (
   }
 
   const { name, parameters } = functionCall;
+
+  console.log(src/api/webhook/functionCall.ts);
   console.log(name, parameters);
+  console.log(functions);
+  console.log(functions[name]);
+
   if (Object.prototype.hasOwnProperty.call(functions, name)) {
     return await functions[name](parameters);
   } else {

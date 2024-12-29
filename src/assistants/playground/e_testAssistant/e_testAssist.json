@@ -1,0 +1,23 @@
+{
+    "assistant":{
+    "name": "e_testAssist",
+    "model": {
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "temperature": 0.7,
+      "systemPrompt": "",
+      "functions": []
+    },
+    "voice": {
+      "voiceId": "248be419-c632-4f23-adf1-5324ed7dbf1d",
+      "provider": "cartesia",
+      "fillerInjectionEnabled": false
+    },
+    "server": {
+      "url": "https://2371-172-103-252-213.ngrok-free.app/src/api/webhook"
+    },
+    "firstMessage": "",
+    "forwardingPhoneNumber": "+16042106553",
+    "endCallFunctionEnabled": true
+  }
+}

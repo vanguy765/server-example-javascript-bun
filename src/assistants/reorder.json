@@ -1,0 +1,81 @@
+{
+  "name": "SupplyCheckAssistant",
+  "transcriber": {
+    "provider": "VAPI",
+    "model": "general",
+    "language": "en",
+    "keywords": ["order", "supplies", "reorder", "pending"]
+  },
+  "model": {
+    "provider": "VAPI",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "maxTokens": 500,
+    "functions": [
+      {
+        "name": "createOrder",
+        "description": "Creates a new supply order for the customer.",
+        "parameters": {
+          "type": "object",
+          "required": ["customerId", "items", "status"],
+          "properties": {
+            "customerId": {
+              "type": "string",
+              "description": "Unique identifier for the customer."
+            },
+            "items": {
+              "type": "array",
+              "description": "List of items for reorder with product IDs, names, and quantities.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "productId": { "type": "string" },
+                  "itemName": { "type": "string" },
+                  "quantity": { "type": "integer" }
+                },
+                "required": ["productId", "itemName", "quantity"]
+              }
+            },
+            "status": {
+              "type": "string",
+              "description": "Status of the order, e.g., 'pending'."
+            }
+          }
+        }
+      }
+    ]
+  },
+  "voice": {
+    "provider": "VAPI",
+    "voiceId": "professional_friendly",
+    "speed": 1.0
+  },
+  "clientMessages": [
+    {
+      "type": "call-script",
+      "content": "Hello [Customer's Name], this is [Assistant Name] from [Your Company].\n\nI’m reaching out to check on your supplies from your last order, placed on [Order Date]. This included:\n- [Quantity] units of [Product Name 1]\n- [Quantity] units of [Product Name 2]\n(Order ID: [Last Order ID]).\n\nAre you finding that you’re running low on any of these items, or is there anything else you might need replenished?"
+    },
+    {
+      "type": "response-positive",
+      "content": "Great! Let me process a new order for you. I’ll ensure it matches your previous items unless you’d like to make any changes."
+    },
+    {
+      "type": "response-negative",
+      "content": "That’s good to hear. Please don’t hesitate to reach out if you need anything in the future."
+    },
+    {
+      "type": "closure",
+      "content": "Thank you for your time, [Customer's Name]. Have a fantastic day!"
+    }
+  ],
+  "serverMessages": [
+    {
+      "type": "function-call",
+      "name": "createOrder",
+      "response": "Order for [Customer's Name] has been placed with a pending status."
+    }
+  ],
+  "firstMessage": "Hello! This is the Supply Check Assistant. I will guide you through checking on your supplies.",
+  "endCallMessage": "Thank you for your time. Have a great day!",
+  "maxDurationSeconds": 300
+}

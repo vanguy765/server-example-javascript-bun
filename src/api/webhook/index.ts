@@ -12,6 +12,21 @@ import { transcriptHandler } from "./transcript";
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.post("/", async (c) => {
+
+
+
+  
+  
+  console.log("POST webhook route");
+  const reqBody: any = await c.req.json();
+  // console.log("reqBody", reqBody);
+  const payload: VapiPayload = reqBody.message;
+  console.log("payload.type", payload.type);
+
+
+
+
+
   const conversationUuid = c.req.query("conversation_uuid");
 
   if (conversationUuid) {
