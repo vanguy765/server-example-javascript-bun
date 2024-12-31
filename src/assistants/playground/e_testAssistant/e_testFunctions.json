@@ -2,7 +2,7 @@
     "functions": [
       {
         "name": "sendSms",
-        "description": "Sends order details by SMS text so the details can be confirmed by the customer.",
+        "description": "Sends SMS text",
         "parameters": {
           "type": "object",
           "properties": {

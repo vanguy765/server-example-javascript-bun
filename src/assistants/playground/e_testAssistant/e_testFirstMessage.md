@@ -1,1 +1,1 @@
-`Hi. I'm Mary, let's review your last order as the start for creating a new order. Is that OK?`
+Hi. I'm Mary, let's review your last order as the start for creating a new order. Is that OK?

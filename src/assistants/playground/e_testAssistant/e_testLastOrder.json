@@ -1,0 +1,9 @@
+{
+"CustomerID": "332",
+"LastOrderID": "453",
+"ItemsOrdered": 
+    [{"id": "12", "name": "Paper Towels", "size": "24 rolls 2 ply", "quantity" : "2"},
+    {"id": "21", "name": "Cleaner", "size": "1 liter", "quantity" : "3"}],
+"CustomerName": "Jack Craig",
+"CustomerPhone": "177-877-54146"
+}

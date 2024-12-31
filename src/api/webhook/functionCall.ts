@@ -4,6 +4,8 @@ import functionsDefault from "../../functions";
 import functionsSms from "../../functionsSms";
 import { FunctionCallPayload } from "../../types/vapi.types";
 
+
+
 // import functionsDb from "../../functionsDb";
 // const defaultFunctions = {
 //   ...functionsDefault,
@@ -27,22 +29,63 @@ export const functionCallHandler = async (
    * Here Assumption is that the function are handling the fallback cases as well. They should return the appropriate response in case of any error.
    */
 
-  const { functionCall } = payload;
 
-  if (!functionCall) {
-    throw new Error("Invalid Request.");
-  }
+  
+// console.log("src/api/webhook/functionCall.ts", payload);
 
-  const { name, parameters } = functionCall;
 
-  console.log(src/api/webhook/functionCall.ts);
-  console.log(name, parameters);
-  console.log(functions);
-  console.log(functions[name]);
+// // Extract functionCall
+// const functionCall = payload.functionCall;
+// console.log("Function Call:", functionCall);
 
-  if (Object.prototype.hasOwnProperty.call(functions, name)) {
-    return await functions[name](parameters);
-  } else {
-    return;
-  }
+// // Extract tool_calls from the messages array
+// interface Message {
+//   role: string;
+//   toolCalls?: any; // Replace 'any' with the appropriate type if known
+// }
+
+// interface Artifact {
+//   messages: Message[];
+// }
+
+// interface FunctionCallPayload {
+//   functionCall: {
+//     name: string;
+//     parameters: any; // Replace 'any' with the appropriate type if known
+//   };
+//   artifact: Artifact;
+// }
+const toolCalls = payload.artifact.messages
+.find((msg: Message) => msg.role === 'tool_calls')?.toolCalls;
+
+if (!toolCalls) {
+throw new Error("Invalid Request.");
+}
+
+const toolCallCurrent = toolCalls[0];
+const toolCallId = toolCallCurrent.id;
+const name = toolCallCurrent.function.name;
+const parameters = JSON.parse(toolCallCurrent.function.arguments);
+
+console.log("parameters", parameters);
+// console.log("Tool Calls:", toolCalls);
+// console.log("name", name);
+// console.log("toolCallId", toolCallId);
+// console.log("functions", functions);
+// console.log("functions[name]", functions[name]);
+
+if (Object.prototype.hasOwnProperty.call(functions, name)) {
+const resultSendSms = await functions[name](parameters.message, parameters.from, parameters.to);
+console.log("resultSendSms", resultSendSms);
+return {
+  "results": [
+      {
+          "toolCallId": toolCallId,
+          "result": resultSendSms
+      }
+  ]
+};
+} else {
+return;
+}
 };

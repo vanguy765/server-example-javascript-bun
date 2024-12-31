@@ -1,3 +1,4 @@
+// src/api/webhook/index.ts
 import { Hono } from "hono";
 import { VapiPayload, VapiWebhookEnum } from "../../types/vapi.types";
 import { Bindings } from "../../types/hono.types";
@@ -10,20 +11,24 @@ import { statusUpdateHandler } from "./statusUpdate";
 import { transcriptHandler } from "./transcript";
 
 const app = new Hono<{ Bindings: Bindings }>();
+let callCount = 0;
 
 app.post("/", async (c) => {
+  callCount++;
 
 
-
-  
-  
-  console.log("POST webhook route");
   const reqBody: any = await c.req.json();
-  // console.log("reqBody", reqBody);
   const payload: VapiPayload = reqBody.message;
-  console.log("payload.type", payload.type);
+
+  // console.log("POST ENTRY src/api/webhook/index.ts '/'");
+  
+  //console.log("reqBody", reqBody);
 
 
+  if (callCount >= 10) {
+    // console.log("payload.type", payload.type);
+    //callCount = 0; // Reset the counter if you want to log every 10th call
+}
 
 
 
@@ -40,6 +45,7 @@ app.post("/", async (c) => {
     switch (payload.type) {
       case VapiWebhookEnum.FUNCTION_CALL:
         console.log("func call");
+        // console.log("payload", payload);
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.STATUS_UPDATE:
         return c.json(await statusUpdateHandler(payload), 201);

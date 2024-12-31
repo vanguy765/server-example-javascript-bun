@@ -26,21 +26,21 @@ export async function sendSms(message: string, from: string, to: string) {
     from: from,
     to: to,
   });
-  console.log(sentMessage.body);
+  console.log("sentMessage.body: ", sentMessage.body);
 
   //Get toolCallId from parameter passed in payload
 
   // Test sentMessage, send different message for different results
 
-  const result = {
-    "results": [
-        {
-            "toolCallId": "X",
-            "result": "Y"
-        }
-    ]
-  }
-  return result;
+  // const result = {
+  //   "results": [
+  //       {
+  //           "toolCallId": "X",
+  //           "result": "Y"
+  //       }
+  //   ]
+  // }
+  return sentMessage;
 };
 
 export async function test_sendSms(){

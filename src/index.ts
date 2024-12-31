@@ -16,26 +16,26 @@ import { Bindings } from "./types/hono.types";
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Middleware to log every request
-app.use("*", async (c, next) => {
-  console.log("");
-  console.log(`> ./index.ts Request: ${c.req.method} ${c.req.url}`);
-  if (["POST", "PUT", "PATCH"].includes(c.req.method)) {
-    let body;
-    try {
-      const bodyText = await c.req.text();
-      if (bodyText) {
-        body = JSON.parse(bodyText);
-        console.log("indexMain Request Body:", body);
-      } else {
-        console.log("indexMain Request Body is empty");
-        app.notFound((c) => c.json({ message: "Not Found", ok: false }, 404));
-      }
-    } catch (error) {
-      console.log("Failed to parse JSON body:", error);
-    }
-  }
-  await next();
-});
+// app.use("*", async (c, next) => {
+//   console.log("");
+//   console.log(`> ./index.ts Request: ${c.req.method} ${c.req.url}`);
+//   if (["POST", "PUT", "PATCH"].includes(c.req.method)) {
+//     let body;
+//     try {
+//       const bodyText = await c.req.text();
+//       if (bodyText) {
+//         body = JSON.parse(bodyText);
+//         console.log("indexMain Request Body:", body);
+//       } else {
+//         console.log("indexMain Request Body is empty");
+//         app.notFound((c) => c.json({ message: "Not Found", ok: false }, 404));
+//       }
+//     } catch (error) {
+//       console.log("Failed to parse JSON body:", error);
+//     }
+//   }
+//   await next();
+// });
 
 app.use("*", prettyJSON());
 app.use("*", cors());

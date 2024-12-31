@@ -6,57 +6,19 @@ import { inspect } from 'util';
 import { join } from 'path'; // Impor
 const fs = require('fs');
 
-// test series
-import testPhoneCustomerAssist from "../assistants/playground/a_testPhoneCustomerAssist.json";
-import { b_testAssist } from "../assistants/playground/b_testAssist";
-import { b_testSms } from "../assistants/playground/b_testSms";
-
-import e_testAssist from "../assistants/playground/e_testAssistant/e_testAssist.json";
-
-
-import { exit } from "process";
-
-console.log('__dirname:', __dirname);
-const filePath = join(__dirname, '../assistants/playground/e_testAssistant/e_testPrompt.md');
-const functions = join(__dirname, '../assistants/playground/e_testAssistant/e_testFunctions.json');
-
-// import c_testSms from "../assistants/playground/c_testSms.json";
-function getSystemPrompt(filePath) {
-  try {
-      // Read file synchronously
-      //const systemPrompt = fs.readFileSync(filePath, 'utf8');
-      const systemPrompt = fs.readFileSync(filePath, 'utf8')
-      .replace(/[\r\n]+/g, '\n')  // normalize line endings
-      .trim();  // r
-
-      return systemPrompt;
-  } catch (error) {
-      console.error('Error reading system prompt file:', error);
-      return null;
-  }
-}
-
-// Usage
-const prompt = getSystemPrompt(filePath);
-console.log('prompt:', prompt);
 
 
 
-e_testAssist.model.systemPrompt = prompt;
-e_testAssist.model.functions = functions;
+ import e_testAssist from "../assistants/playground/e_testAssistant/indexJUNK";
+
 
 
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// const availableAssistants = {
-//   testPhoneCustomerAssist: testPhoneCustomerAssist,
-//   b_testAssist: b_testAssist,
-//   b_testSms: b_testSms,
-//   e_testAssist: e_testAssist
-// };
-
-
+const availableAssistants = {
+  e_testAssist: e_testAssist
+};
 
 // console.log('availableAssistants.c_testSms:', availableAssistants.c_testSms);
 
@@ -67,13 +29,13 @@ const app = new Hono<{ Bindings: Bindings }>();
 // CHANGE THIS TO THE DEFAULT ASSISTANT YOU WANT TO USE
 // ACTUAL ASSISTANT OBJECTS ARE DEFINED IN src/assistants/playground
 // SELECTION OF ASSISTANT IS BY ASSISTANT NAME GIVEN IN THE REQUEST BODY
-const defaultAssistantName = "c_testSms";
+const defaultAssistantName = "e_testAssist";
 
 // ########################################################################
 // CHANGE THIS TO THE SITE YOU WANT TO USE (FOR TESTING OR PRODUCTION)
 const productionSite = `${envConfig.vapi.baseUrl}/call`;
 const testSite = "https://webhook.site/8ff7ab34-3192-497f-83f4-c41a0f8a18ba";
-const useSite = productionSite;
+const useSite = testSite;
 
 // ########################################################################
 // CHANGE THIS TO THE DEFAULT VAPI-PHONE-NUMBER-ID
@@ -92,11 +54,13 @@ app.use("*", async (c, next) => {
   await next();
 });
 
+// ########################################################################
 app.get("/", (c) => {
   console.log(`GET src/api/outbound.ts Hello World!`);
   return c.text("GET src/api/outbound.ts Hello World!");
 });
 
+// ########################################################################
 app.post("/", async (c) => {
 
   // Extract phoneNumberId, assistantId, and customerNumber from the request body
@@ -109,7 +73,7 @@ app.post("/", async (c) => {
 
   // Choose the assistant to use for the outbound call
   // const assistant = availableAssistants[assistantName as keyof typeof availableAssistants];  
-  const assistant = availableAssistants.c_testSms
+  const assistant = availableAssistants[assistantName as keyof typeof availableAssistants];
   try {
     /**!SECTION
      * Handle Outbound Call logic here.
@@ -156,7 +120,6 @@ console.log("body:", body);
 console.log("body.assistant:", body.assistant);
 console.log('useSite:', useSite);
 
-exit();
 
 
     // Make a POST request to the Vapi API or test site

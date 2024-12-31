@@ -9,7 +9,7 @@ import { Bindings } from "./types/hono.types";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-console.log("ENTRY src/api/testEndpoint.ts");
+// console.log("ENTRY src/api/testEndpoint.ts");
 
 
 app.get("/", (c) => {
@@ -21,7 +21,8 @@ app.get("/", (c) => {
 app.post("/", async (c) => {
   console.log(`(TESTING src/api/testEndpoint.ts) POST Hello World!`);
   const body = await c.req.json();
-  console.log("Request Body:", body);
+  console.log("Request Body testEndpoint :", body);
+  console.log("END testEndpoint");
   return c.text("POST Hello World!");
 });
 

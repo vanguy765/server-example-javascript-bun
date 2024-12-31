@@ -15,7 +15,7 @@
 
 const smsHandler = new Hono<{ Bindings: Bindings }>();
 
-console.log("ENTRY src/api/functions/sms.ts smsHandler");
+// console.log("ENTRY src/api/functions/sms.ts smsHandler");
 
 //=======================================================================
 smsHandler.get("/", (c) => {
@@ -92,10 +92,10 @@ smsHandler.post("/sendsms", async (c) => {
 
       if (name === "sendSms") {
         
-        const to = parameter.to;
-        const from = parameter.from;
         // const customerName = parameter.from; // Replace with actual customer name from your data
         // const lastOrderDate = parameter.from; // Replace with actual last order date from your data
+        const to = parameter.to;
+        const from = parameter.from;
         const message = parameter.message;
         const toolCallId = payload.toolCalls[0].id;
 
