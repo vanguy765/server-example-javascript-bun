@@ -1,0 +1,11 @@
+$body = @{
+    fromNumber = '1234567890'
+    toNumber = '0987654321'
+    companyAgentName = 'Test Agent'
+    companyAgentDir = 'test/agent/dir'
+    demo = $true
+}
+
+$bodyJson = $body | ConvertTo-Json
+
+Invoke-RestMethod -Uri http://localhost:3000/forms/index/submit -Method Post -Body $bodyJson -ContentType 'application/json'

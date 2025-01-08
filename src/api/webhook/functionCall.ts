@@ -67,16 +67,22 @@ const toolCallId = toolCallCurrent.id;
 const name = toolCallCurrent.function.name;
 const parameters = JSON.parse(toolCallCurrent.function.arguments);
 
+
+
+console.log("");
+console.log("ENTER src/api/webhook/functionCall.ts");
 console.log("parameters", parameters);
-// console.log("Tool Calls:", toolCalls);
-// console.log("name", name);
-// console.log("toolCallId", toolCallId);
-// console.log("functions", functions);
-// console.log("functions[name]", functions[name]);
+console.log("Tool Calls:", toolCalls);
+console.log("name", name);
+console.log("toolCallId", toolCallId);
+console.log("functions", functions);
+console.log("functions[name]", functions[name]);
 
 if (Object.prototype.hasOwnProperty.call(functions, name)) {
 const resultSendSms = await functions[name](parameters.message, parameters.from, parameters.to);
 console.log("resultSendSms", resultSendSms);
+console.log("EXIT src/api/webhook/functionCall.ts");
+
 return {
   "results": [
       {

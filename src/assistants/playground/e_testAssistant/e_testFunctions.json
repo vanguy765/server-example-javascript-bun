@@ -7,13 +7,16 @@
           "type": "object",
           "properties": {
             "from": {
-              "type": "string"
+              "type": "string",
+              "description": "The phone number from which the SMS will be sent."
             },
             "to": {
-              "type": "string"
+              "type": "string",
+              "description": "The phone number to which the SMS will be sent."
             },
             "message": {
-              "type": "string"
+              "type": "string",
+              "description": "The message to be sent in the SMS."
             }
           }
         }
@@ -25,10 +28,12 @@
           "type": "object",
           "properties": {
             "customerID": {
-              "type": "string"
+              "type": "string",
+              "description": "The customer ID associated with the order."
             },
             "status": {
-              "type": "string"
+              "type": "string",
+              "description": "The status of the order."
             },
             "lineItems": {
               "type": "array",
@@ -36,16 +41,20 @@
                 "type": "object",
                 "properties": {
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The ID of the item."
                   },
                   "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The name of the item."
                   },
                   "size": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The size of the item."
                   },
                   "quantity": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The quantity of the item."
                   }
                 }
               }

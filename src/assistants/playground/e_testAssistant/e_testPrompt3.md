@@ -35,7 +35,7 @@ transferCall()
     - Create currentOrderState as new object
     - Copy all items from lastOrder to currentOrderState
     - Say: "Please hold a moment while I send you a text of your last order."
-    - Send text using LAST_ORDER template. (Only use this template to Create a New Order.)
+    - Send text using LAST_ORDER template. (Only use this template to Initialize Order.)
 
 2. Process Order Modifications
     - Review currentOrderState items (names and quantities only)
@@ -55,7 +55,7 @@ transferCall()
 
 ## Examples 
 
-### Example Conversation Flow
+### Example Conversation
 Mary: "Hello, this is Mary calling from Acme Supplies. Is this a good time to talk?"
 
 Customer: "Yes"
@@ -101,33 +101,19 @@ Mary: "Have a great rest of your day. Goodbye."
 ### Reference Objects
 #### Company
 {
-  "companyID": "345",
-  "companyName": "Acme Supplies",
-  "companyPhone": "+16042106553"
+  "companyID": {{companyID}},
+  "companyName": {{companyName}},
+  "companyPhone": {{companyPhone}}
 }
 
+#### Customer
+{{customer}}
+
 #### LastOrder
-{
-  "customerID": "123",
-  "orderID": "789",
-  "orderDate": "2024-01-20",
-  "items": [
-    {
-      "id": "12",
-      "name": "Toilet Paper",
-      "size": "12 rolls 2 ply",
-      "quantity": "2"
-    },
-    {
-      "id": "21",
-      "name": "Soap",
-      "size": "6 bars",
-      "quantity": "3"
-    }
-  ],
-  "customerName": "John Smith",
-  "customerCell": "+17787754146"
-}
+{{lastOrder}}
+
+#### CurrentDate
+{{currentDate}}
 
 #### CurrentOrderState
 // This is a dynamic object structure, not actual data
@@ -146,13 +132,13 @@ Mary: "Have a great rest of your day. Goodbye."
 {
   "message": "LAST ORDER\n
 OrderID: ${lastOrder.orderID}\n
-For: ${lastOrder.customerName}\n
+For: ${customer.name}\n
 Order date: ${lastOrder.orderDate}\n\n
 ${formatItems(lastOrder.items)}\n\n
 Anything you wish changed? Or,
 is it OK to reorder the same?",
   "from": "${company.companyPhone}",
-  "to": "${lastOrder.customerCell}"
+  "to": "${customer.cell}"
 }
 
 ### PENDING_ORDER Template
@@ -162,19 +148,19 @@ ${formatItems(currentOrderState.items)}\n\n
 Confirm or make changes?\n
 (Order PENDING till confirmed.)",
   "from": "${company.companyPhone}",
-  "to": "${lastOrder.customerCell}"
+  "to": "${customer.cell}"
 }
 
 ### CONFIRMED_ORDER Template
 {
   "message": "CONFIRMED ORDER\n
 OrderID: ${newOrder.orderID}\n
-For: ${lastOrder.customerName}\n
-Order date: ${getCurrentDate()}\n\n
+For: ${customer.name}\n
+Order date: ${currentDate}\n\n
 ${formatItems(currentOrderState.items)}\n\n
 This order is CONFIRMED.",
   "from": "${company.companyPhone}",
-  "to": "${lastOrder.customerCell}"
+  "to": "${customer.cell}"
 }
 
 Where formatItems() formats each item as:

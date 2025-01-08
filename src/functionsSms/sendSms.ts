@@ -14,19 +14,15 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = twilio(accountSid, authToken);
 
-// {
-//   "phoneNumberId": "97166f4e-61a5-4c6c-b15f-c6a295076707", 
-//   "assistantId": "9a25d36f-3c55-48fe-a8b8-26727062c7c3", 
-//   "customerNumber": "+7787754146"
-//   }
-
 export async function sendSms(message: string, from: string, to: string) {
   const sentMessage = await client.messages.create({
     body: message,
     from: from,
     to: to,
   });
+  console.log(">>> src/functionsSms/sendSms.ts");
   console.log("sentMessage.body: ", sentMessage.body);
+  console.log("<<< src/functionsSms/sendSms.ts");
 
   //Get toolCallId from parameter passed in payload
 

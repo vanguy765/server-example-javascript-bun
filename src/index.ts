@@ -38,6 +38,58 @@ const app = new Hono<{ Bindings: Bindings }>();
 // });
 
 app.use("*", prettyJSON());
+
+interface CorsOptions {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => void;
+  methods: string;
+  allowedHeaders: string[];
+  credentials: boolean;
+  maxAge: number;
+}
+
+// Expand by getting list of allowed origins from a database
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+
+  // Change this for production
+  return true
+
+  const allowedSubdomains: string[] = ['sub1.example.com', 'sub2.example.com'];
+  const allowedDomains: string[] = ['example.com', 'anotherdomain.com'];
+
+  if (!origin) {
+    return false;
+  }
+
+  // Check if the origin is in the allowed subdomains
+  if (allowedSubdomains.includes(origin)) {
+    return true;
+  }
+
+  // Check if the origin's domain is in the allowed domains
+  const domain: string = origin.split('.').slice(-2).join('.');
+  if (allowedDomains.includes(domain)) {
+    return true;
+  }
+
+  return false;
+};
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (isAllowedOrigin(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 3600
+};
+
+
+
 app.use("*", cors());
 
 

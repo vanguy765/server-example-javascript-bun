@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { envConfig } from "../config/env.config";
 import { Bindings } from "../types/hono.types";
 import { inspect } from 'util';
-import { join } from 'path'; // Impor
+import { join } from 'path';
 const fs = require('fs');
 
 
@@ -35,7 +35,7 @@ const defaultAssistantName = "e_testAssist";
 // CHANGE THIS TO THE SITE YOU WANT TO USE (FOR TESTING OR PRODUCTION)
 const productionSite = `${envConfig.vapi.baseUrl}/call`;
 const testSite = "https://webhook.site/8ff7ab34-3192-497f-83f4-c41a0f8a18ba";
-const useSite = testSite;
+const useSite = productionSite;
 
 // ########################################################################
 // CHANGE THIS TO THE DEFAULT VAPI-PHONE-NUMBER-ID
@@ -71,40 +71,21 @@ app.post("/", async (c) => {
     customerNumber 
   } = await c.req.json();
 
-  // Choose the assistant to use for the outbound call
-  // const assistant = availableAssistants[assistantName as keyof typeof availableAssistants];  
+  // Choose the assistant to use for the outbound call 
   const assistant = availableAssistants[assistantName as keyof typeof availableAssistants];
+
   try {
     /**!SECTION
      * Handle Outbound Call logic here.
      * This can initiate an outbound call to a customer's phonenumber using Vapi.
      */
 
-    console.log("===================================================");
-    console.log("===================================================");
-    console.log("defaultPhoneNumberId: ", defaultPhoneNumberId);
-    console.log("defaultAssistantName:", defaultAssistantName);
-    // console.log("assistant:", assistant);
-    // console.log("phoneNumberId: ", phoneNumberId);
-    // console.log("customerNumber:", customerNumber);
+    // Get the prompt for the assistant
 
     const headers = {
       "Content-Type": "application/json", // 'Content-Type' must be quoted because it contains a hyphen
       Authorization: `Bearer ${envConfig.vapi.apiKey}`, // 'Authorization' does not need to be quoted
     };
-
-    // const body = {
-    //   phoneNumberId: phoneNumberId,
-    //   assistant: assistant,
-    //   customer: {
-    //     number: customerNumber,
-    //   },
-    // };
-
-    console.log("Making a POST request to: ", useSite);
-    //  console.log("headers:", headers);
-    //  console.log("body:", body);
-    // console.log("assistant:", assistant);
 
     const body = {
       phoneNumberId: phoneNumberId,
@@ -114,13 +95,13 @@ app.post("/", async (c) => {
       },
     };
 
-console.log('=================================');
-console.log("prompt:", prompt);
-console.log("body:", body);
-console.log("body.assistant:", body.assistant);
-console.log('useSite:', useSite);
-
-
+    console.log('=================================');
+    console.log("prompt:", prompt);
+    console.log("body:", body);
+    console.log("body.assistant:", body.assistant);
+    console.log('useSite:', useSite);
+    console.log("defaultPhoneNumberId: ", defaultPhoneNumberId);
+    console.log("defaultPhoneNumberId: ", defaultPhoneNumberId);
 
     // Make a POST request to the Vapi API or test site
     const response = await fetch(useSite, {
@@ -129,19 +110,14 @@ console.log('useSite:', useSite);
       body: JSON.stringify(body),
     });
 
-
     if (!response.ok) {
       throw new Error(`src/api/outbound.ts ${useSite} \nHTTP error! status: ${response.status}`);
     }
 
+    const data = await response.json();
 
     console.log(`==========`);
-    const data = await response.json();
     console.log(`response from ${useSite}:`, JSON.stringify(data, null, 2));
-
-    console.log(`response from ${useSite}:`);
-    console.dir(data, { depth: null, colors: true });
-    //console.log(`response from ${useSite}: ${data}`);
 
     return c.json(data, 200);
 
@@ -155,5 +131,58 @@ console.log('useSite:', useSite);
     );
   }
 });
+
+
+// ########################################################################
+app.post("/transient", async (c) => {
+
+  try {
+    /**!SECTION
+     * Handle Outbound Call logic here.
+     * This can initiate an outbound call to a customer's phonenumber using Vapi.
+     */
+
+    // Get the prompt for the assistant
+    const body = await c.req.json();
+
+    const headers = {
+      "Content-Type": "application/json", // 'Content-Type' must be quoted because it contains a hyphen
+      Authorization: `Bearer ${envConfig.vapi.apiKey}`, // 'Authorization' does not need to be quoted
+    };
+
+    console.log("body:", body);
+    console.log('useSite:', useSite);
+    console.log('headers:', headers);
+
+
+    // Make a POST request to the Vapi API or test site
+    const response = await fetch(useSite, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`src/api/outbound.ts ${useSite} \nHTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    console.log(`==========`);
+    console.log(`response from ${useSite}:`, JSON.stringify(data, null, 2));
+
+    return c.json(data, 200);
+
+  } catch (error: any) {
+    return c.json(
+      {
+        message: "src/api/outbound.ts Failed to place outbound call",
+        error: error.message,
+      },
+      500
+    );
+  };
+});
+
 
 export { app as outboundRoute };

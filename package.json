@@ -4,6 +4,7 @@
     "dev": "nodemon --watch src --exec bun run src/index.ts"
   },
   "dependencies": {
+    "find-up": "^7.0.0",
     "hono": "^4.6.14",
     "jmespath": "^0.16.0",
     "llamaindex": "^0.1.9",

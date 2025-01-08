@@ -1,57 +1,95 @@
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import path from 'path';
 
-function updateSystemPrompt(
-    pathAssistFile: string, 
-    pathPromptFile: string, 
-    pathFunctionsFile: string,
-    pathFirstMessageFile: string,
-    pathGuidelinesFile: string,
-    pathLastOrderFile: string
-    ) {
+interface UpdateSystemPromptParams {
+    pathSystemPromptFile: string;
+    pathFirstMessageFile: string;
+    pathGuidelinesFile: string;
+    assistantWrapperFile: string;
+    pathFunctionsFile: string;
+}
+
+function updateSystemPrompt({
+    pathSystemPromptFile,
+    pathFirstMessageFile,
+    pathGuidelinesFile,
+    assistantWrapperFile,
+    pathFunctionsFile
+}: UpdateSystemPromptParams) {
+
+// console.log("updateSystemPrompt pathSystemPromptFile: ", pathSystemPromptFile);
+// console.log("updateSystemPrompt pathFirstMessageFile: ", pathFirstMessageFile);
+// console.log("updateSystemPrompt pathGuidelinesFile: ", pathGuidelinesFile);
+// console.log("updateSystemPrompt assistantWrapperFile: ", assistantWrapperFile);
+// console.log("updateSystemPrompt pathFunctionsFile: ", pathFunctionsFile);
+
+
+
 
     try {
-        
-        // Read the Markdown file
-        const systemPrompt = readFileSync(pathPromptFile, 'utf8')
+        // systemPrompt - Read the Markdown file
+        const systemPrompt = readFileSync(pathSystemPromptFile, 'utf8')
             .replace(/[\r\n]+/g, '\n')  // normalize line endings
             .trim();  // trim whitespace
 
-        // Read the Markdown file
+        // firstMessage - Read the Markdown file
         const firstMessage = readFileSync(pathFirstMessageFile, 'utf8')
-        .replace(/[\r\n]+/g, '\n')  // normalize line endings
-        .trim();  // trim whitespace
-      
-        // Read the Markdown file
-        const guidelines = readFileSync(pathGuidelinesFile, 'utf8')
-        .replace(/[\r\n]+/g, '\n')  // normalize line endings
-        .trim();  // trim whitespace
+            .replace(/[\r\n]+/g, '\n')  // normalize line endings
+            .trim();  // trim whitespace
 
-        // Read the assistant template JSON file
-        const pathAssist = JSON.parse(readFileSync(pathAssistFile, 'utf8'));
-        // Read the functions JSON file
+        // guidelines - Read the Markdown file
+        const guidelines = readFileSync(pathGuidelinesFile, 'utf8')
+            .replace(/[\r\n]+/g, '\n')  // normalize line endings
+            .trim();  // trim whitespace
+
+        // assistantWrapper - Read the assistant template JSON file
+        const assistantWrapper = JSON.parse(readFileSync(assistantWrapperFile, 'utf8'));
+
+        // functions - Read the functions JSON file
         const functions = JSON.parse(readFileSync(pathFunctionsFile, 'utf8'));
 
-        // Read the lastOrder JSON file
-        console.log('pathLastOrderFile:', pathLastOrderFile); // Log the content for debugging
-        const lastOrderContent = readFileSync(pathLastOrderFile, 'utf8');
-        console.log('lastOrderContent:', lastOrderContent); // Log the content for debugging
-        const lastOrder = JSON.parse(lastOrderContent);
+        // Insert the functions
+        assistantWrapper.assistant.model.functions = functions.functions;
+        // Insert the firstMessage
+        assistantWrapper.assistant.model.systemPrompt = systemPrompt;
+        // Insert the systemPrompt
+        assistantWrapper.assistant.firstMessage = firstMessage;
 
-        
-        // Update the systemPrompt in pathAssist
-        pathAssist.assistant.model.systemPrompt = systemPrompt;
-        // Insert the functions into pathAssist.assistant.model.functions
-        pathAssist.assistant.model.functions = functions.functions;        
-        // Update the firstMessage in pathAssist
-        pathAssist.assistant.firstMessage = firstMessage;
-        
-        // Print the updated pathAssist object
-        // console.log("updateSystemPrompt assistant: ", JSON.stringify(pathAssist, null, 2));
-        return pathAssist;
+        // Print the updated assistantWrapper object
+        // console.log("updateSystemPrompt assistant: ", JSON.stringify(assistantWrapper, null, 2));
+        return assistantWrapper;
 
     } catch (error) {
         console.error('Error updating system prompt:', error);
     }
 }
+
 export default updateSystemPrompt;
+
+//=============================================================================
+if (require.main === module) {
+    const testPath = "";
+    const testParams = {
+        pathSystemPromptFile: 'e_testPrompt3.md',
+        assistantWrapperFile: 'e_testAssist.json',
+        pathFirstMessageFile: 'e_testFirstMessage.md',
+        pathGuidelinesFile: 'e_testGuidelines.md',
+        pathFunctionsFile: 'e_testFunctions.json'
+    };
+    const basePath = path.resolve(__dirname, testPath);
+    const pathSystemPromptFile = path.join(basePath, testParams.pathSystemPromptFile);
+    const pathFirstMessageFile = path.join(basePath, testParams.pathFirstMessageFile);
+    const pathGuidelinesFile = path.join(basePath, testParams.pathGuidelinesFile);
+    const assistantWrapperFile = path.join(basePath, testParams.assistantWrapperFile);
+    const pathFunctionsFile = path.join(basePath, testParams.pathFunctionsFile);
+
+    const result = updateSystemPrompt({
+            pathSystemPromptFile: pathSystemPromptFile,
+            pathFirstMessageFile: pathFirstMessageFile,
+            pathGuidelinesFile: pathGuidelinesFile,
+            assistantWrapperFile: assistantWrapperFile,
+            pathFunctionsFile: pathFunctionsFile
+        });
+
+    console.log(JSON.stringify(result, null, 2));
+}

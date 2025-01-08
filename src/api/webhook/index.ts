@@ -32,12 +32,18 @@ app.post("/", async (c) => {
 
 
 
-  const conversationUuid = c.req.query("conversation_uuid");
 
-  if (conversationUuid) {
-    // Fetch some data from the database and use it in the handlers.
-    console.log("conversationUuid", conversationUuid);
-  }
+
+  // const conversationUuid = c.req.query("conversation_uuid");
+
+  // if (conversationUuid) {
+  //   // Fetch some data from the database and use it in the handlers.
+  //   console.log("conversationUuid ===============================");
+  //   console.log("conversationUuid", conversationUuid);
+  // }
+
+  
+
 
   try {
     const reqBody: any = await c.req.json();
@@ -46,6 +52,7 @@ app.post("/", async (c) => {
       case VapiWebhookEnum.FUNCTION_CALL:
         console.log("func call");
         // console.log("payload", payload);
+        console.log("payload.call.id", payload.call.id);
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.STATUS_UPDATE:
         return c.json(await statusUpdateHandler(payload), 201);

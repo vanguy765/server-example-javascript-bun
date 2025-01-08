@@ -1,3 +1,18 @@
+// src/config/env.config.ts
+
+const path = require('path');
+import { findUp } from 'find-up';
+
+async function getRootDir() {
+  const packageJsonPath = await findUp('package.json');
+  if (!packageJsonPath) {
+    throw new Error('Could not find package.json');
+  }
+  return path.dirname(packageJsonPath);
+}
+
+
+
 export const envConfig = {
   weather: {
     baseUrl:
@@ -10,5 +25,14 @@ export const envConfig = {
   vapi: {
     baseUrl: process.env.VAPI_BASE_URL ?? "https://api.vapi.ai",
     apiKey: process.env.VAPI_API_KEY ?? "",
+  },
+  demo: {
+    phoneNumber: process.env.DEMO_PHONE_NUMBER ?? "",
+    agentName: process.env.DEMO_AGENT_NAME ?? "",
+    agentDir: process.env.DEMO_AGENT_DIR ?? "",
+  },
+  utils: {
+    rootDir: getRootDir(),
+    defaultAgentDir: process.env.DEFAULT_AGENT_DIR ?? "",
   },
 };

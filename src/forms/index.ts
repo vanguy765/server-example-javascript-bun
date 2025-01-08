@@ -6,7 +6,20 @@ import { envConfig } from "../config/env.config";
 import { cellphoneFormHTML } from "./cellphone";
 import { Bindings } from "../types/hono.types";
 import { join } from 'path'; // Import join from path module
-import  updateSystemPrompt  from "../assistants/playground/e_testAssistant/";
+import  updateSystemPrompt  from "../assistants/playground/e_testAssistant";
+
+import { orderTable } from "../functionsDb/orderTable/index";  
+import { companyTable } from "../functionsDb/companyTable/index";
+import { customerTable } from "../functionsDb/customerTable/index";
+import { env } from "process";
+import path from 'path';
+
+const demoPhoneNumber = envConfig.demo.phoneNumber;
+const demoAgentName = envConfig.demo.agentName;
+const demoAgentDir = envConfig.demo.agentDir;
+const appUtils = envConfig.utils;
+const defaultAgentDir = envConfig.utils.defaultAgentDir;
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 // console.log("ENTRY src/forms/index.ts");
@@ -27,10 +40,10 @@ app.get("/", (c) => {
 
 //============================================================================
 app.post("/", async (c) => {
-    console.log(`(TESTING 14256) POST Hello World!`);
+    console.log(`(TESTING 1425644) POST Hello World!`);
     const body = await c.req.json();
     console.log("Request Body 14256:", body);
-    return c.text("(TESTING 14256) POST Hello World!");
+    return c.text("(TESTING 14666256) POST Hello World!");
   });
 
 
@@ -38,88 +51,177 @@ app.post("/", async (c) => {
 // Handle 'Cell Phone Number Submission' form submission
 // from src/forms/cellphone.ts
 app.post("/submit", async (c) => {
-    
-
-
-
-  const body = await c.req.json();
-  // const phoneNumberId = findPhoneNumberInDb;
-  const customerNumber = `+1${body.phoneNumber}`;
-
-
-  // console.log('__dirname:', __dirname);
-
-// Example usage
-const pathPromptFile = join(__dirname, '../assistants/playground/e_testAssistant/e_testPrompt3.md');
-const pathGuidelinesFile = join(__dirname, '../assistants/playground/e_testAssistant/e_testGuidelines.md');
-const pathLastOrderFile = join(__dirname, '../assistants/playground/e_testAssistant/e_testLastOrder.json');
-const pathFunctionsFile = join(__dirname, '../assistants/playground/e_testAssistant/e_testFunctions.json');
-const pathFirstMessageFile = join(__dirname, '../assistants/playground/e_testAssistant/e_testFirstMessage.md');
-const pathAssistFile = join(__dirname, '../assistants/playground/e_testAssistant/e_testAssist.json');
-const SystemPromptUpdated = updateSystemPrompt(
-    pathAssistFile, pathPromptFile, 
-    pathFunctionsFile, pathFirstMessageFile, 
-    pathGuidelinesFile, pathLastOrderFile
-) as any;
-
-
-const customer = { "customer": {
-    "number": customerNumber
-    }
-}
-
-const findPhoneNumberInDb_phoneNumberId = "97166f4e-61a5-4c6c-b15f-c6a295076707";
-const phoneNumberId = { "phoneNumberId": findPhoneNumberInDb_phoneNumberId };
-SystemPromptUpdated.customer = customer.customer;
-SystemPromptUpdated.phoneNumberId = phoneNumberId.phoneNumberId;
-
-
-// console.log('SystemPromptUpdated 4445:', JSON.stringify(SystemPromptUpdated, null, 2));
-
-  // Wait for 5 seconds
-  // await new Promise(resolve => setTimeout(resolve, 5000));
-
-  const vapi_formCellPhoneNumberSubmission = `${envConfig.vapi.baseUrl}/call`;
-  const test_formCellPhoneNumberSubmission = "http://localhost:3000/api/testEndpoint";
-  const endpoint_formCellPhoneNumberSubmission = vapi_formCellPhoneNumberSubmission;
-  
-  // Send POST request to another service
   try {
-    const assistant = SystemPromptUpdated.assistant;
-        //console.log('SystemPromptUpdated 443345:', JSON.stringify(SystemPromptUpdated, null, 2));
-        console.log('#################################################################################');
-        console.log('endpoint_formCellPhoneNumberSubmission:', endpoint_formCellPhoneNumberSubmission);
+    const body = await c.req.json();
+    const customerPhoneNumber = `+1${body.toNumber}`;
 
-        const response = await fetch(endpoint_formCellPhoneNumberSubmission, {
+
+    console.log('body: ', body);
+
+
+    const demo = body.demo as boolean || true;
+    let companyPhoneNumber = `+1${body.fromNumber}` || demoPhoneNumber;
+    let companyAgentName = body.companyAgentName || demoAgentName;
+    let companyAgentDir = body.companyAgentDir || defaultAgentDir;
+
+    // For testing purposes
+    let testPath = "../assistants/playground/e_testAssistant";
+    let testParams = {
+        pathSystemPromptFile: 'e_testPrompt3.md',
+        pathFirstMessageFile: 'e_testFirstMessage.md',
+        pathGuidelinesFile: 'e_testGuidelines.md',
+        assistantWrapperFile: 'e_testAssist.json',
+        pathFunctionsFile: 'e_testFunctions.json'
+    }
+
+    // For production
+    // Standardize filepath names and call to db NOT required
+    if (!demo) {  
+        // Get the company parameters from the db (companyPhoneNumber, companyAgentName)
+        // testPath = "";
+        // testParams = {
+        //     pathSystemPromptFile: db filepath to prompt.md,
+        //     pathFirstMessageFile: 'e_testFirstMessage.md',
+        //     pathGuidelinesFile: 'e_testGuidelines.md',
+        //     assistantWrapperFile: 'e_testAssist.json',
+        //     pathFunctionsFile: 'e_testFunctions.json'
+        // };
+    }
+
+    // If the TEXT for the systemPrompt, firstMessage, guidelines, and functions are in folders/files
+      const basePath = path.resolve(__dirname, testPath);
+      const pathSystemPromptFile = path.join(basePath, testParams.pathSystemPromptFile);
+      const pathFirstMessageFile = path.join(basePath, testParams.pathFirstMessageFile);
+      const pathGuidelinesFile = path.join(basePath, testParams.pathGuidelinesFile);
+      const assistantWrapperFile = path.join(basePath, testParams.assistantWrapperFile);
+      const pathFunctionsFile = path.join(basePath, testParams.pathFunctionsFile);
+
+    // If the TEXT for the systemPrompt, firstMessage, guidelines, and functions are in folders/files
+    // Else read the TEXT from the db directly
+    const vapiConnector = updateSystemPrompt({
+      pathSystemPromptFile: pathSystemPromptFile,
+      pathFirstMessageFile: pathFirstMessageFile,
+      pathGuidelinesFile: pathGuidelinesFile,
+      assistantWrapperFile: assistantWrapperFile,
+      pathFunctionsFile: pathFunctionsFile
+    });
+
+    console.log(">> src/forms/index vapiConnector: \n", JSON.stringify(vapiConnector, null, 2));
+    console.log('customerPhoneNumber:', customerPhoneNumber);
+    console.log('companyPhoneNumber:', companyPhoneNumber);
+
+    // ** Get the company parameters from the db using companyPhoneNumber passed in the request
+    const COMPANY = companyTable.getCompany(companyPhoneNumber);
+
+    // ** Get the customer ID from the request, or from the DB using customerPhoneNumber
+    const CUSTOMER = customerTable.getCustomer(customerPhoneNumber);
+
+    // Mock the last order ID, date and line items for this customer from the db
+    const LAST_ORDER = orderTable.getLastOrder(CUSTOMER.ID);
+
+    // Update the CurrentDate in assistantWrapper
+    const currentDate = new Date().toISOString();
+
+    // Reference systemPrompt from vapiConnector
+    const assistant = vapiConnector.assistant;
+    const systemPrompt = assistant.model.systemPrompt;
+
+    // Update systemPrompt companyParameters
+    const systemPromptWithCompany = systemPrompt
+      .replace(/{{companyName}}/g, COMPANY.name)
+      .replace(/{{companyPhone}}/g, COMPANY.phone.number)
+      .replace(/{{companyID}}/g, COMPANY.ID);
+
+    // Update systemPrompt currentDate
+    const systemPromptWithDate = systemPromptWithCompany
+      .replace(/{{currentDate}}/g, currentDate);
+      
+    // Update systemPrompt LAST_ORDER
+    const systemPromptWithCustomer = systemPromptWithDate
+      .replace(/{{customer}}/g, JSON.stringify(CUSTOMER));
+
+    // Update systemPrompt LAST_ORDER
+    const systemPromptWithLastOrder = systemPromptWithCustomer
+      .replace(/{{lastOrder}}/g, JSON.stringify(LAST_ORDER));
+
+    // Replace systemPrompt in assistant
+    assistant.model.systemPrompt = systemPromptWithLastOrder;
+
+    const vapiPhoneNumberId = COMPANY.phone.vapiId;
+    vapiConnector.phoneNumberId = vapiPhoneNumberId;
+
+    vapiConnector.customer.number = CUSTOMER.cell;
+
+    // If this is a demo, wait for 5 seconds before making the call+
+    // await new Promise(resolve => setTimeout(resolve, 5000));
+
+    const vapi_formCellPhoneNumberSubmission = `${envConfig.vapi.baseUrl}/call`;
+    const test_formCellPhoneNumberSubmission = "http://localhost:3000/api/testEndpoint";
+    const endpoint_formCellPhoneNumberSubmission = vapi_formCellPhoneNumberSubmission;
+    const endpoint_outboundTransient = "http://localhost:3000/api/outbound/transient";;
+
+    console.log('vapiConnector:', vapiConnector);
+
+    // Send POST request to another service
+    try {
+      const assistant = vapiConnector.assistant;
+      //console.log('vapiConnector 443345:', JSON.stringify(vapiConnector, null, 2));
+      console.log('#################################################################################');
+      console.log('endpoint_outboundTransient:', endpoint_outboundTransient);
+
+      const response = await fetch(endpoint_outboundTransient, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${envConfig.vapi.apiKey}`,
-        },        
-        body: JSON.stringify(SystemPromptUpdated),
-        });
-        
-        if (!response.ok) {
-            return c.json({ success: false, error: 'Failed to forward request' }, 500);
-        }
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${envConfig.vapi.apiKey}`,
+        },
+        body: JSON.stringify(vapiConnector),
+      });
 
-        const data = await response.json();
-        console.log(data);
-        return c.json({ success: true });
+      if (!response.ok) {
+        console.error('Failed to forward request:', response.statusText);
+        return c.json({ success: false, error: 'Failed to forward request' }, 500);
+      }
 
+      const data = await response.json();
+      console.log('data.id:', data.id);
 
+      return c.json({ success: true });
+
+    } catch (error) {
+      console.error('Error during fetch:', error);
+      return c.json({ success: false, error: (error as Error).message }, 500);
+    }
   } catch (error) {
+    console.error('Error processing /submit request:', error);
     return c.json({ success: false, error: (error as Error).message }, 500);
   }
 });
 
 
+if (require.main === module) {
+
+  // Simulate a POST request to /submit
+  const simulatedRequest = {
+    req: {
+      json: async () => ({
+        fromNumber: '6042106553',
+        toNumber: '7787754146',
+        companyAgentName: 'Test Agent',
+        companyAgentDir: 'test/agent/dir',
+        demo: true
+      })
+    },
+    json: (response: any, status: number) => {
+      console.log('Simulated response:', response);
+      console.log('Status:', status);
+    }
+  };
+
+  app.post("/submit", simulatedRequest);
+}
 
 export { app as formsRoute };
-
-
-
-
 
 
 
