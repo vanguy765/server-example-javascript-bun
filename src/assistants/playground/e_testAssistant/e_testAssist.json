@@ -1,9 +1,9 @@
 {
-    "customer": {
-      "number": "+1xxxxxxxxxx"
-    },
-    "phoneNumberId": "your-phone-id",
-    "assistant":{
+  "customer": {
+    "number": "+1xxxxxxxxxx"
+  },
+  "phoneNumberId": "your-phone-id",
+  "assistant": {
     "name": "e_testAssist",
     "model": {
       "model": "gpt-4o",
@@ -22,6 +22,7 @@
     },
     "firstMessage": "",
     "forwardingPhoneNumber": "+16042106553",
-    "endCallFunctionEnabled": true
+    "endCallFunctionEnabled": true,
+    "modelOutputInMessagesEnabled": true
   }
 }

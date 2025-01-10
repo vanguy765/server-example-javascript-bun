@@ -2,28 +2,19 @@
 import { Hono } from "hono";
 import { envConfig } from "../config/env.config";
 import { Bindings } from "../types/hono.types";
-import { inspect } from 'util';
-import { join } from 'path';
-const fs = require('fs');
+import { inspect } from "util";
+import { join } from "path";
+const fs = require("fs");
 
-
-
-
- import e_testAssist from "../assistants/playground/e_testAssistant/indexJUNK";
-
-
-
+import e_testAssist from "../assistants/playground/e_testAssistant/indexJUNK";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
 const availableAssistants = {
-  e_testAssist: e_testAssist
+  e_testAssist: e_testAssist,
 };
 
 // console.log('availableAssistants.c_testSms:', availableAssistants.c_testSms);
-
-
-
 
 // ########################################################################
 // CHANGE THIS TO THE DEFAULT ASSISTANT YOU WANT TO USE
@@ -39,7 +30,7 @@ const useSite = productionSite;
 
 // ########################################################################
 // CHANGE THIS TO THE DEFAULT VAPI-PHONE-NUMBER-ID
-// ACTUAL NUMBER IN PRODUCTION IS ASSOCIATED WITH THE COMPANY ON WHOSE 
+// ACTUAL NUMBER IN PRODUCTION IS ASSOCIATED WITH THE COMPANY ON WHOSE
 // BEHALF THE CALL IS BEING MADE (See companyTable in local DB.)
 // LOCATE COMPANY IN DB BY PHONE NUMBER GIVEN IN REQUEST BODY.
 const defaultPhoneNumberId = "97166f4e-61a5-4c6c-b15f-c6a295076707";
@@ -50,7 +41,9 @@ const defaultPhoneNumberId = "97166f4e-61a5-4c6c-b15f-c6a295076707";
 
 // Middleware to log every request
 app.use("*", async (c, next) => {
-  console.log(`>> Request at src/api/outbound.ts: ${c.req.method} ${c.req.url}`);
+  console.log(
+    `>> Request at src/api/outbound.ts: ${c.req.method} ${c.req.url}`
+  );
   await next();
 });
 
@@ -62,17 +55,17 @@ app.get("/", (c) => {
 
 // ########################################################################
 app.post("/", async (c) => {
-
   // Extract phoneNumberId, assistantId, and customerNumber from the request body
   // Use DEFAULTS as required *************************************
-  const { 
-    phoneNumberId = defaultPhoneNumberId, 
-    assistantName = defaultAssistantName, 
-    customerNumber 
+  const {
+    phoneNumberId = defaultPhoneNumberId,
+    assistantName = defaultAssistantName,
+    customerNumber,
   } = await c.req.json();
 
-  // Choose the assistant to use for the outbound call 
-  const assistant = availableAssistants[assistantName as keyof typeof availableAssistants];
+  // Choose the assistant to use for the outbound call
+  const assistant =
+    availableAssistants[assistantName as keyof typeof availableAssistants];
 
   try {
     /**!SECTION
@@ -95,11 +88,11 @@ app.post("/", async (c) => {
       },
     };
 
-    console.log('=================================');
+    console.log("=================================");
     console.log("prompt:", prompt);
     console.log("body:", body);
     console.log("body.assistant:", body.assistant);
-    console.log('useSite:', useSite);
+    console.log("useSite:", useSite);
     console.log("defaultPhoneNumberId: ", defaultPhoneNumberId);
     console.log("defaultPhoneNumberId: ", defaultPhoneNumberId);
 
@@ -111,7 +104,9 @@ app.post("/", async (c) => {
     });
 
     if (!response.ok) {
-      throw new Error(`src/api/outbound.ts ${useSite} \nHTTP error! status: ${response.status}`);
+      throw new Error(
+        `src/api/outbound.ts ${useSite} \nHTTP error! status: ${response.status}`
+      );
     }
 
     const data = await response.json();
@@ -120,7 +115,6 @@ app.post("/", async (c) => {
     console.log(`response from ${useSite}:`, JSON.stringify(data, null, 2));
 
     return c.json(data, 200);
-
   } catch (error: any) {
     return c.json(
       {
@@ -132,10 +126,8 @@ app.post("/", async (c) => {
   }
 });
 
-
 // ########################################################################
 app.post("/transient", async (c) => {
-
   try {
     /**!SECTION
      * Handle Outbound Call logic here.
@@ -151,9 +143,8 @@ app.post("/transient", async (c) => {
     };
 
     console.log("body:", body);
-    console.log('useSite:', useSite);
-    console.log('headers:', headers);
-
+    console.log("useSite:", useSite);
+    console.log("headers:", headers);
 
     // Make a POST request to the Vapi API or test site
     const response = await fetch(useSite, {
@@ -163,7 +154,9 @@ app.post("/transient", async (c) => {
     });
 
     if (!response.ok) {
-      throw new Error(`src/api/outbound.ts ${useSite} \nHTTP error! status: ${response.status}`);
+      throw new Error(
+        `src/api/outbound.ts ${useSite} \nHTTP error! status: ${response.status}`
+      );
     }
 
     const data = await response.json();
@@ -172,7 +165,6 @@ app.post("/transient", async (c) => {
     console.log(`response from ${useSite}:`, JSON.stringify(data, null, 2));
 
     return c.json(data, 200);
-
   } catch (error: any) {
     return c.json(
       {
@@ -181,8 +173,59 @@ app.post("/transient", async (c) => {
       },
       500
     );
-  };
+  }
 });
 
+// ########################################################################
+app.post("/assistantOverides", async (c) => {
+  try {
+    // This endpoint is used to update the variables in a Vapi assistant
+    // The passed in body should contain everything as required by
+    // https://docs.vapi.ai/assistants/dynamic-variables
+
+    const body = await c.req.json();
+
+    const headers = {
+      "Content-Type": "application/json", // 'Content-Type' must be quoted because it contains a hyphen
+      Authorization: `Bearer ${envConfig.vapi.apiKey}`, // 'Authorization' does not need to be quoted
+    };
+
+    // Make the POST request to update variables in assistant and make the phone call
+    const useSite = `${envConfig.vapi.baseUrl}/call/phone`;
+
+    console.log(`src/api/outbound.ts >> updateAgent POST ====================`);
+    console.log("useSite:", useSite);
+    console.log("headers:", headers);
+    console.log("body:", body);
+
+    const response = await fetch(useSite, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `src/api/outbound.ts >> outbound/updateAgent \n
+        ${useSite} \n
+        HTTP error! status: ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    console.log(`response from ${useSite}:`, JSON.stringify(data, null, 2));
+    return c.json(data, 200);
+  } catch (error: any) {
+    return c.json(
+      {
+        message:
+          "src/api/outbound.ts >> updateAgent Failed to place outbound call",
+        error: error.message,
+      },
+      500
+    );
+  }
+});
 
 export { app as outboundRoute };

@@ -28,7 +28,7 @@ export const envConfig = {
   },
   demo: {
     phoneNumber: process.env.DEMO_PHONE_NUMBER ?? "",
-    agentName: process.env.DEMO_AGENT_NAME ?? "",
+    agentType: process.env.DEMO_AGENT_TYPE ?? "",
     agentDir: process.env.DEMO_AGENT_DIR ?? "",
   },
   utils: {

@@ -1,11 +1,15 @@
 # Define the body of the request
+# agentType = 'transient'
+# agentType = 'assistantOverides'
+# agentType = 'variableValues'
 $body = @{
-    fromNumber = '+16042106553'
-    toNumber = '+17787754146'
+    fromNumber = '6042106553'
+    toNumber = '7787754146'
     companyAgentName = 'Test Agent'
     companyAgentDir = 'test/agent/dir'
+    agentType = 'assistantOverides'
     demo = $true
-    agentName = 'Test Agent'
+    agentName = 'default'
     agentTransient = $true
 }
 

@@ -1,7 +1,6 @@
 // src/functionsDb/companyTable/index
 
-import { getCompany } from './getCompany';
-
+import { getCompany } from "./getCompany";
 
 export const companyTable = {
   getCompany,

@@ -16,23 +16,17 @@ let callCount = 0;
 app.post("/", async (c) => {
   callCount++;
 
-
   const reqBody: any = await c.req.json();
   const payload: VapiPayload = reqBody.message;
 
   // console.log("POST ENTRY src/api/webhook/index.ts '/'");
-  
-  //console.log("reqBody", reqBody);
 
+  //console.log("reqBody", reqBody);
 
   if (callCount >= 10) {
     // console.log("payload.type", payload.type);
     //callCount = 0; // Reset the counter if you want to log every 10th call
-}
-
-
-
-
+  }
 
   // const conversationUuid = c.req.query("conversation_uuid");
 
@@ -41,9 +35,6 @@ app.post("/", async (c) => {
   //   console.log("conversationUuid ===============================");
   //   console.log("conversationUuid", conversationUuid);
   // }
-
-  
-
 
   try {
     const reqBody: any = await c.req.json();

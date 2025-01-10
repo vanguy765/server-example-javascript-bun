@@ -46,5 +46,6 @@
       "provider":"11labs",
       "voiceId":"paula"
     },
+    "modelOutputInMessagesEnabled": true,
     "firstMessage":"Hi. I'm Mary, your personal character sketch pad."
   }

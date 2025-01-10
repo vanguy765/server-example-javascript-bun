@@ -131,40 +131,40 @@ Mary: "Have a great rest of your day. Goodbye."
 ### LAST_ORDER Template
 {
   "message": "LAST ORDER\n
-OrderID: ${lastOrder.orderID}\n
-For: ${customer.name}\n
-Order date: ${lastOrder.orderDate}\n\n
-${formatItems(lastOrder.items)}\n\n
+OrderID: {{lastOrder.orderID}}\n
+For: {{customer.name}}\n
+Order date: {{lastOrder.orderDate}}\n\n
+{{formatItems(lastOrder.items)}}\n\n
 Anything you wish changed? Or,
 is it OK to reorder the same?",
-  "from": "${company.companyPhone}",
-  "to": "${customer.cell}"
+  "from": "{{company.companyPhone}}",
+  "to": "{{customer.cell}}"
 }
 
 ### PENDING_ORDER Template
 {
   "message": "PENDING ORDER\n
-${formatItems(currentOrderState.items)}\n\n
+{{formatItems(currentOrderState.items)}}\n\n
 Confirm or make changes?\n
 (Order PENDING till confirmed.)",
-  "from": "${company.companyPhone}",
-  "to": "${customer.cell}"
+  "from": "{{company.companyPhone}}",
+  "to": "{{customer.cell}}"
 }
 
 ### CONFIRMED_ORDER Template
 {
   "message": "CONFIRMED ORDER\n
-OrderID: ${newOrder.orderID}\n
-For: ${customer.name}\n
-Order date: ${currentDate}\n\n
-${formatItems(currentOrderState.items)}\n\n
+OrderID: {{newOrder.orderID}}\n
+For: {{customer.name}}\n
+Order date: {{currentDate}}\n\n
+{{formatItems(currentOrderState.items)}}\n\n
 This order is CONFIRMED.",
-  "from": "${company.companyPhone}",
-  "to": "${customer.cell}"
+  "from": "{{company.companyPhone}}",
+  "to": "{{customer.cell}}"
 }
 
 Where formatItems() formats each item as:
-"- ${item.quantity} units ${item.name}: ${item.size}"
+"- {{item.quantity}} units {{item.name}}: {{item.size}}"
 
 
 ## Guidelines

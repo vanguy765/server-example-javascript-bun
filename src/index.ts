@@ -7,7 +7,7 @@ import { functionCallRoute } from "./api/functions";
 import { inboundRoute } from "./api/inbound";
 import { outboundRoute } from "./api/outbound";
 import { webhookRoute } from "./api/webhook";
-import { formsRoute } from "./forms/index";
+import { formsRoute } from "./forms/indexBase";
 import { formsTestRoute } from "./api/testEndpoint";
 import { Bindings } from "./types/hono.types";
 
@@ -40,7 +40,10 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use("*", prettyJSON());
 
 interface CorsOptions {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => void;
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => void;
   methods: string;
   allowedHeaders: string[];
   credentials: boolean;
@@ -49,12 +52,11 @@ interface CorsOptions {
 
 // Expand by getting list of allowed origins from a database
 const isAllowedOrigin = (origin: string | undefined): boolean => {
-
   // Change this for production
-  return true
+  return true;
 
-  const allowedSubdomains: string[] = ['sub1.example.com', 'sub2.example.com'];
-  const allowedDomains: string[] = ['example.com', 'anotherdomain.com'];
+  const allowedSubdomains: string[] = ["sub1.example.com", "sub2.example.com"];
+  const allowedDomains: string[] = ["example.com", "anotherdomain.com"];
 
   if (!origin) {
     return false;
@@ -66,7 +68,7 @@ const isAllowedOrigin = (origin: string | undefined): boolean => {
   }
 
   // Check if the origin's domain is in the allowed domains
-  const domain: string = origin.split('.').slice(-2).join('.');
+  const domain: string = origin.split(".").slice(-2).join(".");
   if (allowedDomains.includes(domain)) {
     return true;
   }
@@ -79,20 +81,16 @@ const corsOptions = {
     if (isAllowedOrigin(origin) || !origin) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
-  maxAge: 3600
+  maxAge: 3600,
 };
 
-
-
 app.use("*", cors());
-
-
 
 app.get("/", (c) => {
   console.log(`(TESTING) GET Hello World!`);
