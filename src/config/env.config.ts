@@ -1,17 +1,15 @@
 // src/config/env.config.ts
 
-const path = require('path');
-import { findUp } from 'find-up';
+const path = require("path");
+import { findUp } from "find-up";
 
 async function getRootDir() {
-  const packageJsonPath = await findUp('package.json');
+  const packageJsonPath = await findUp("package.json");
   if (!packageJsonPath) {
-    throw new Error('Could not find package.json');
+    throw new Error("Could not find package.json");
   }
   return path.dirname(packageJsonPath);
 }
-
-
 
 export const envConfig = {
   weather: {
@@ -34,5 +32,12 @@ export const envConfig = {
   utils: {
     rootDir: getRootDir(),
     defaultAgentDir: process.env.DEFAULT_AGENT_DIR ?? "",
+  },
+  endpoint: {
+    local_outboundCall: `http://localhost:${process.env.PORT}/api/outbound/call`,
+    local_outboundTransient: `http://localhost:${process.env.PORT}/api/outbound/transient`,
+    local_outboundAssistantOverrides: `http://localhost:${process.env.PORT}/api/outbound/assistantOverrides`,
+    vapi_outboundTransient: `${process.env.VAPI_BASE_URL}/call`,
+    vapi_outboundAssistantOverides: `${process.env.VAPI_BASE_URL}/call/phone`,
   },
 };

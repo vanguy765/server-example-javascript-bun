@@ -3,14 +3,14 @@
 # agentType = 'assistantOverides'
 # agentType = 'variableValues'
 $body = @{
-    fromNumber = '6042106553'
-    toNumber = '7787754146'
+    fromNumber       = '2367055080'
+    toNumber         = '7787754146'
     companyAgentName = 'Test Agent'
-    companyAgentDir = 'test/agent/dir'
-    agentType = 'assistantOverides'
-    demo = $true
-    agentName = 'default'
-    agentTransient = $true
+    companyAgentDir  = 'test/agent/dir'
+    agentType        = 'assistantOverrides'
+    demo             = $true
+    agentName        = 'default'
+    agentTransient   = $true
 }
 
 # Convert the body to JSON

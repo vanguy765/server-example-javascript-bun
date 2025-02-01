@@ -35,30 +35,36 @@ app.post("/", async (c) => {
   //   console.log("conversationUuid ===============================");
   //   console.log("conversationUuid", conversationUuid);
   // }
-
   try {
     const reqBody: any = await c.req.json();
     const payload: VapiPayload = reqBody.message;
     switch (payload.type) {
       case VapiWebhookEnum.FUNCTION_CALL:
-        console.log("func call");
         // console.log("payload", payload);
+        console.log("FUNCTION_CALL");
         console.log("payload.call.id", payload.call.id);
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.STATUS_UPDATE:
+        console.log("STATUS_UPDATE");
         return c.json(await statusUpdateHandler(payload), 201);
       case VapiWebhookEnum.ASSISTANT_REQUEST:
+        console.log("ASSISTANT_REQUEST");
         return c.json(await assistantRequestHandler(payload), 201);
       case VapiWebhookEnum.END_OF_CALL_REPORT:
+        console.log("END_OF_CALL_REPORT");
         await endOfCallReportHandler(payload);
         return c.json({}, 201);
       case VapiWebhookEnum.SPEECH_UPDATE:
+        console.log("SPEECH_UPDATE");
         return c.json(await speechUpdateHandler(payload), 201);
       case VapiWebhookEnum.TRANSCRIPT:
+        console.log("TRANSCRIPT");
         return c.json(await transcriptHandler(payload), 201);
       case VapiWebhookEnum.HANG:
+        console.log("HANG");
         return c.json(await HangEventHandler(payload), 201);
       default:
+        console.log("DEFAULT");
         throw new Error("Unhandled message type");
     }
   } catch (error: any) {

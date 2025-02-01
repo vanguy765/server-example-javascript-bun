@@ -7,7 +7,7 @@ import { functionCallRoute } from "./api/functions";
 import { inboundRoute } from "./api/inbound";
 import { outboundRoute } from "./api/outbound";
 import { webhookRoute } from "./api/webhook";
-import { formsRoute } from "./forms/indexBase";
+import { formsRoute } from "./forms/index";
 import { formsTestRoute } from "./api/testEndpoint";
 import { Bindings } from "./types/hono.types";
 

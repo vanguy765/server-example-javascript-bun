@@ -6,8 +6,8 @@ export const getCompany = (companyId: string) => {
 
 const mockGetCompany = {
   ID: "345",
-  name: "Acme Supplies",
+  name: "Acme Supplies Inc.",
   phone: {
-    number: "+16042106553",
+    number: "+12367055080",
   },
 };

@@ -8,6 +8,8 @@ const fs = require("fs");
 
 import e_testAssist from "../assistants/playground/e_testAssistant/indexJUNK";
 
+import assembleAssistants from "./assistants/utils/assembleAssistant";
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 const availableAssistants = {
@@ -15,6 +17,13 @@ const availableAssistants = {
 };
 
 // console.log('availableAssistants.c_testSms:', availableAssistants.c_testSms);
+
+// Use the 'From' number from the request body to determine the companyId, companyName,
+// and default assistantName from the companyTable in the local database.
+
+// All of the assistants are in the src/assistants/ directory, companyName/ folder
+// If a folder in src/assistants/ matches companyName, import all the files in the folder
+// to constants of similar names.
 
 // ########################################################################
 // CHANGE THIS TO THE DEFAULT ASSISTANT YOU WANT TO USE
@@ -57,6 +66,9 @@ app.get("/", (c) => {
 app.post("/", async (c) => {
   // Extract phoneNumberId, assistantId, and customerNumber from the request body
   // Use DEFAULTS as required *************************************
+
+  console.log(`POST src/api/outbound.ts Hello World!`);
+
   const {
     phoneNumberId = defaultPhoneNumberId,
     assistantName = defaultAssistantName,
@@ -177,7 +189,7 @@ app.post("/transient", async (c) => {
 });
 
 // ########################################################################
-app.post("/assistantOverides", async (c) => {
+app.post("/assistantOverrides", async (c) => {
   try {
     // This endpoint is used to update the variables in a Vapi assistant
     // The passed in body should contain everything as required by
@@ -193,7 +205,9 @@ app.post("/assistantOverides", async (c) => {
     // Make the POST request to update variables in assistant and make the phone call
     const useSite = `${envConfig.vapi.baseUrl}/call/phone`;
 
-    console.log(`src/api/outbound.ts >> updateAgent POST ====================`);
+    console.log(
+      `src/api/outbound.ts >> assistantOverrides POST ====================`
+    );
     console.log("useSite:", useSite);
     console.log("headers:", headers);
     console.log("body:", body);
@@ -206,7 +220,7 @@ app.post("/assistantOverides", async (c) => {
 
     if (!response.ok) {
       throw new Error(
-        `src/api/outbound.ts >> outbound/updateAgent \n
+        `src/api/outbound.ts >> outbound/assistantOverrides \n
         ${useSite} \n
         HTTP error! status: ${response.status}`
       );

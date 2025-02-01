@@ -2,12 +2,12 @@
   "companyName": "Acme Supplies Inc.",
   "phoneNumbers": [
     {
-      "phoneNumber": "+1234567890",
-      "vapiPhoneID": "97166f4e-61a5-4c6c-b15f-c6a295076707",
+      "phoneNumber": "+16042106553",
+      "vapiPhoneID": "",
       "assistants": [
         {
-          "name": "Alice",
-          "assistantID": "A001"
+          "name": "default",
+          "assistantID": "53ee94e7-b7ac-4579-91c8-d7a90fbc0dcd"
         },
         {
           "name": "Bob",
@@ -16,12 +16,12 @@
       ]
     },
     {
-      "phoneNumber": "+0987654321",
-      "vapiPhoneID": "",
+      "phoneNumber": "+12367055080",
+      "vapiPhoneID": "97166f4e-61a5-4c6c-b15f-c6a295076707",
       "assistants": [
         {
-          "name": "Charlie",
-          "assistantID": "A003"
+          "name": "default",
+          "assistantID": "53ee94e7-b7ac-4579-91c8-d7a90fbc0dcd"
         },
         {
           "name": "David",

@@ -4,8 +4,6 @@ import functionsDefault from "../../functions";
 import functionsSms from "../../functionsSms";
 import { FunctionCallPayload } from "../../types/vapi.types";
 
-
-
 // import functionsDb from "../../functionsDb";
 // const defaultFunctions = {
 //   ...functionsDefault,
@@ -29,69 +27,95 @@ export const functionCallHandler = async (
    * Here Assumption is that the function are handling the fallback cases as well. They should return the appropriate response in case of any error.
    */
 
+  console.log("src/api/webhook/functionCall.ts", payload);
 
-  
-// console.log("src/api/webhook/functionCall.ts", payload);
+  // Extract functionCall
+  const functionCall = payload.functionCall;
 
+  // If this is a function call to sendSms
 
-// // Extract functionCall
-// const functionCall = payload.functionCall;
-// console.log("Function Call:", functionCall);
+  // Extract '- {{item.id}} : ' from the FUnctionCallPayload
+  // - {{item.id}} : {{item.quantity}} units {{item.name}}: {{item.size}}
 
-// // Extract tool_calls from the messages array
-// interface Message {
-//   role: string;
-//   toolCalls?: any; // Replace 'any' with the appropriate type if known
-// }
+  // If template is 'Pending Order'
+  // if Redis has key for customernumber and pending order_id
+  // Send SMS to customer with order details
+  // Update pending order line items in Redis
+  // Return line items with order_id and timestamp
+  // else
+  // create pending order in DB
+  // Copy pending order into Redis
+  // Send SMS to customer with order details
+  // Return line items with order_id and timestamp
 
-// interface Artifact {
-//   messages: Message[];
-// }
+  // If template is 'Order Confirmation'
+  // Send SMS to customer with order details, order_id
+  // Update order status in DB to 'confirmed'
+  // Delete pending order from Redis
 
-// interface FunctionCallPayload {
-//   functionCall: {
-//     name: string;
-//     parameters: any; // Replace 'any' with the appropriate type if known
-//   };
-//   artifact: Artifact;
-// }
-const toolCalls = payload.artifact.messages
-.find((msg: Message) => msg.role === 'tool_calls')?.toolCalls;
+  // console.log("src/api/webhook/functionCall.ts", payload);
 
-if (!toolCalls) {
-throw new Error("Invalid Request.");
-}
+  // // Extract functionCall
+  // const functionCall = payload.functionCall;
+  // console.log("Function Call:", functionCall);
 
-const toolCallCurrent = toolCalls[0];
-const toolCallId = toolCallCurrent.id;
-const name = toolCallCurrent.function.name;
-const parameters = JSON.parse(toolCallCurrent.function.arguments);
+  // // Extract tool_calls from the messages array
+  // interface Message {
+  //   role: string;
+  //   toolCalls?: any; // Replace 'any' with the appropriate type if known
+  // }
 
+  // interface Artifact {
+  //   messages: Message[];
+  // }
 
+  // interface FunctionCallPayload {
+  //   functionCall: {
+  //     name: string;
+  //     parameters: any; // Replace 'any' with the appropriate type if known
+  //   };
+  //   artifact: Artifact;
+  // }
+  const toolCalls = payload.artifact.messages.find(
+    (msg: Message) => msg.role === "tool_calls"
+  )?.toolCalls;
 
-console.log("");
-console.log("ENTER src/api/webhook/functionCall.ts");
-console.log("parameters", parameters);
-console.log("Tool Calls:", toolCalls);
-console.log("name", name);
-console.log("toolCallId", toolCallId);
-console.log("functions", functions);
-console.log("functions[name]", functions[name]);
+  if (!toolCalls) {
+    throw new Error("Invalid Request.");
+  }
 
-if (Object.prototype.hasOwnProperty.call(functions, name)) {
-const resultSendSms = await functions[name](parameters.message, parameters.from, parameters.to);
-console.log("resultSendSms", resultSendSms);
-console.log("EXIT src/api/webhook/functionCall.ts");
+  const toolCallCurrent = toolCalls[0];
+  const toolCallId = toolCallCurrent.id;
+  const name = toolCallCurrent.function.name;
+  const parameters = JSON.parse(toolCallCurrent.function.arguments);
 
-return {
-  "results": [
-      {
-          "toolCallId": toolCallId,
-          "result": resultSendSms
-      }
-  ]
-};
-} else {
-return;
-}
+  console.log("");
+  console.log("ENTER src/api/webhook/functionCall.ts");
+  console.log("parameters", parameters);
+  console.log("Tool Calls:", toolCalls);
+  console.log("name", name);
+  console.log("toolCallId", toolCallId);
+  console.log("functions", functions);
+  console.log("functions[name]", functions[name]);
+
+  if (Object.prototype.hasOwnProperty.call(functions, name)) {
+    const resultSendSms = await functions[name](
+      parameters.message,
+      parameters.from,
+      parameters.to
+    );
+    console.log("resultSendSms", resultSendSms);
+    console.log("EXIT src/api/webhook/functionCall.ts");
+
+    return {
+      results: [
+        {
+          toolCallId: toolCallId,
+          result: resultSendSms,
+        },
+      ],
+    };
+  } else {
+    return;
+  }
 };
