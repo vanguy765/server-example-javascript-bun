@@ -1,0 +1,29 @@
+When working in this project, please note the following about our Supabase implementation:
+
+The project uses a dual-approach Supabase integration in the `src/supabase/` directory:
+
+1. **Repository Pattern with Zod Validation**:
+
+   - `client.ts` - Initializes the Supabase client
+   - `types.ts` - Contains TypeScript interfaces for database entities
+   - `schemas.ts` - Contains Zod schemas for validation
+   - `tenants.ts` - Repository functions with CRUD operations and API routes
+   - `index.ts` - Barrel file that re-exports all functionality
+
+2. **Direct API Access**:
+   - Available through the `tenantsDirectApi` export
+   - Provides simpler, more direct access to Supabase responses
+
+When implementing database functionality:
+
+- For robust, type-safe operations with validation, use the Repository Pattern exports (`getAllTenants`, etc.)
+- For simpler, direct access to Supabase responses, use the Direct API exports (`tenantsDirectApi`)
+- For advanced queries, the raw Supabase client is available via `supabaseClient`
+
+Documentation is available in:
+
+- `docs/examples/repository-pattern.md` - Overview of both approaches
+- `docs/examples/direct-api-usage.ts` - Examples of direct API usage
+- `docs/examples/using-repository-pattern.ts` - Examples of Repository Pattern usage
+
+To add new table entities, follow the pattern established with the `tenants` implementation.

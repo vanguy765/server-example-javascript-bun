@@ -1,26 +1,28 @@
-import { createClient } from "@supabase/supabase-js";
-import { envConfig } from "../config/env.config";
+/**
+ * @deprecated This file is deprecated. Please use the modules in src/supabase/ instead.
+ *
+ * The Supabase functionality has been moved to a more robust Repository Pattern
+ * implementation in the src/supabase directory. This file is kept for backward
+ * compatibility but will be removed in a future update.
+ *
+ * See the docs/examples/repository-pattern.md file for documentation on the new approach.
+ */
+
 import { Hono } from "hono";
 import { Bindings } from "../types/hono.types";
+import {
+  getAllTenants as getTenantsFromRepo,
+  supabaseClient,
+} from "../supabase";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// Create a Supabase client instance
-export const supabaseClient = createClient(
-  envConfig.supabase.url,
-  envConfig.supabase.key
-);
-
-// Helper function to get all tenants
+// Helper function to get all tenants (for backward compatibility)
 export async function getAllTenants() {
-  const { data, error } = await supabaseClient.from("tenants").select("*");
-
-  if (error) {
-    console.error("Error fetching tenants:", error);
-    throw error;
-  }
-
-  return data;
+  console.warn(
+    "WARNING: Using deprecated getAllTenants function. Please import from src/supabase instead."
+  );
+  return await getTenantsFromRepo();
 }
 
 // API endpoint to get all tenants
@@ -33,4 +35,6 @@ app.get("/tenants", async (c) => {
   }
 });
 
+// For backward compatibility
+export { supabaseClient };
 export { app as supabaseRoute };

@@ -6,7 +6,7 @@ import { functionCallRoute } from "./api/functions";
 import { inboundRoute } from "./api/inbound";
 import { outboundRoute } from "./api/outbound";
 import { reorderbotRoute } from "./api/reorderbot";
-import { supabaseRoute } from "./api/supabase";
+import { tenantsRoute as supabaseRoute } from "./supabase";
 import { webhookRoute } from "./api/webhook";
 import { Bindings } from "./types/hono.types";
 
@@ -29,7 +29,7 @@ app.route("/api/inbound", inboundRoute);
 app.route("/api/outbound", outboundRoute);
 app.route("/api/reorderbot", reorderbotRoute);
 app.route("/api/webhook", webhookRoute);
-app.route("/api/supabase", supabaseRoute);
+app.route("/api/supabase/tenants", supabaseRoute);
 
 app.route("/api/functions", functionCallRoute);
 app.route("/api/custom-llm", customLLMRoute);

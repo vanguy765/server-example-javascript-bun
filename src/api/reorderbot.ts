@@ -17,9 +17,8 @@ app.post("/", async (c) => {
     assistantId: ${assistantId}, 
     customerNumber: ${customerNumber}`
   );
-
   // Get all tenants from the database
-  const { getAllTenants } = await import("./supabase");
+  const { getAllTenants } = await import("../supabase");
   let tenants;
   try {
     tenants = await getAllTenants();

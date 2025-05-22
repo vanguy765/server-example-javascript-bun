@@ -1,0 +1,1 @@
+"I'd like to implement the Repository Pattern with barrel exports for my database access layer, where each entity has its own module file and everything is re-exported through an index file."
