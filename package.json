@@ -1,6 +1,9 @@
 {
   "scripts": {
-    "start": "bun --env-file=.env run --hot src/index.ts"
+    "start": "bun --env-file=.env run --hot src/index.ts",
+    "gen:types": "bun --env-file=.env run scripts/generate-types.ts",
+    "gen:schema-types": "bun --env-file=.env run scripts/introspect-schema.ts",
+    "analyze:schema": "bun --env-file=.env run examples/query-schema-and-generate.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.5.0",
@@ -12,6 +15,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^20.11.16"
+    "@types/node": "^20.11.16",
+    "supabase": "^2.23.4",
+    "supabase-to-zod": "^1.0.7"
   }
 }

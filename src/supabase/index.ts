@@ -29,4 +29,12 @@ export type {
   TenantFromSchema,
 } from "./schemas";
 
+// Export generated enums
+// Note: This export might fail if the file doesn't exist yet
+// Run 'pnpm gen:schema-types' first to generate the enums file
+export * from "./generated.enums";
+
+// Export generated enums (uncomment after generating the enums file)
+// export * from "./generated.enums";
+
 // In the future, you can add more exports for other tables and queries here
