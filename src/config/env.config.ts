@@ -11,4 +11,8 @@ export const envConfig = {
     baseUrl: process.env.VAPI_BASE_URL ?? "https://api.vapi.ai",
     apiKey: process.env.VAPI_API_KEY ?? "",
   },
+  supabase: {
+    url: process.env.SUPABASE_URL ?? "",
+    key: process.env.SUPABASE_ANON_KEY ?? "",
+  },
 };

@@ -6,11 +6,9 @@ import { functionCallRoute } from "./api/functions";
 import { inboundRoute } from "./api/inbound";
 import { outboundRoute } from "./api/outbound";
 import { reorderbotRoute } from "./api/reorderbot";
+import { supabaseRoute } from "./api/supabase";
 import { webhookRoute } from "./api/webhook";
 import { Bindings } from "./types/hono.types";
-import { serveStatic } from "hono/serve-static";
-import * as fs from "fs";
-import * as path from "path";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -22,28 +20,16 @@ app.get("/", (c) => {
   return c.text("Hello World!");
 });
 
-// Serve reorderbot.html
 app.get("/reorderbot", async (c) => {
-  try {
-    console.log("GET request received for /reorderbot");
-
-    const htmlPath = path.join(__dirname, "reorderbot.html");
-    console.log(`Reading HTML file from: ${htmlPath}`);
-
-    const html = fs.readFileSync(htmlPath, "utf8");
-    console.log("HTML file successfully read");
-
-    return c.html(html);
-  } catch (error: any) {
-    console.error("Error serving reorderbot.html:", error.message);
-    return c.text(`Error serving HTML: ${error.message}`, 500);
-  }
+  const html = await Bun.file("./src/reorderbot.html").text();
+  return c.html(html);
 });
 
 app.route("/api/inbound", inboundRoute);
 app.route("/api/outbound", outboundRoute);
 app.route("/api/reorderbot", reorderbotRoute);
 app.route("/api/webhook", webhookRoute);
+app.route("/api/supabase", supabaseRoute);
 
 app.route("/api/functions", functionCallRoute);
 app.route("/api/custom-llm", customLLMRoute);

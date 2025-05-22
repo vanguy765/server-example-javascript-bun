@@ -11,13 +11,22 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.post("/", async (c) => {
   // Extract phoneNumberId, assistantId, and customerNumber from the request body
   const { phoneNumberId, assistantId, customerNumber } = await c.req.json();
-
   console.log(
     `Received request to place outbound call with 
     phoneNumberId: ${phoneNumberId}, 
     assistantId: ${assistantId}, 
     customerNumber: ${customerNumber}`
   );
+
+  // Get all tenants from the database
+  const { getAllTenants } = await import("./supabase");
+  let tenants;
+  try {
+    tenants = await getAllTenants();
+    console.log("Successfully retrieved tenants:", tenants);
+  } catch (error) {
+    console.error("Failed to retrieve tenants:", error);
+  }
 
   try {
     /**!SECTION
