@@ -1,0 +1,449 @@
+// filepath: c:\Users\3900X\Code\vapiordie3\vapiordie3\scripts\cli-generate-types.ts
+import * as fs from 'fs';
+import * as path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as ts from 'typescript';
+
+// Promisify the exec function for async/await usage
+const execAsync = promisify(exec);
+
+// Output file paths
+const TYPES_OUTPUT = path.join(__dirname, '../src/supabase/generated.types.ts');
+const SCHEMAS_OUTPUT = path.join(__dirname, '../src/supabase/generated.schemas.ts');
+const ENUMS_OUTPUT = path.join(__dirname, '../src/supabase/generated.enums.ts');
+const REPO_OUTPUT = path.join(__dirname, '../src/supabase/generated-repo.ts');
+
+/**
+ * Main function to generate types, schemas, and repositories using Supabase CLI
+ */
+async function generateTypes() {
+  console.log('🚀 Starting CLI-based type generation...');
+  
+  try {
+    // Check for access token
+    if (!process.env.SUPABASE_ACCESS_TOKEN) {
+      console.error('❌ Missing SUPABASE_ACCESS_TOKEN environment variable.');
+      console.log('  Please add this to your .env file or set it in your environment.');
+      console.log('  You can get this token from https://app.supabase.io/account/tokens');
+      throw new Error('Missing SUPABASE_ACCESS_TOKEN');
+    }
+
+    // Set environment variables for the Supabase CLI
+    const env = { ...process.env };
+
+    // Function to get project ID
+    const getProjectId = async (): Promise<string> => {
+      // Check if project ID is provided in environment variables first
+      if (process.env.SUPABASE_PROJECT_ID) {
+        console.log(`✅ Using project ID from environment: ${process.env.SUPABASE_PROJECT_ID}`);
+        return process.env.SUPABASE_PROJECT_ID;
+      }
+      
+      // Get project ID from the Supabase projects list
+      console.log('📋 Getting project ID from Supabase CLI...');
+      const { stdout: projectsOutput } = await execAsync('npx supabase projects list', { env });
+      
+      console.log('🔍 Searching for project ID in CLI output...');
+      console.log('CLI Output:');
+      console.log(projectsOutput);
+      
+      // This regex looks for reference id in various formats
+      const referenceIdMatch = projectsOutput.match(/Reference ID[:\s]+([a-z0-9-]+)/i) || 
+                              projectsOutput.match(/reference[_\s-]?id[:\s]+([a-z0-9-]+)/i);
+      
+      // If not found with reference ID, try other patterns in the output
+      const projectMatch = referenceIdMatch || 
+                          projectsOutput.match(/(?:project|ref)[_\s-]?id[:\s]+([a-z0-9-]+)/i) ||
+                          projectsOutput.match(/([a-z0-9-]{20,36})/); // Look for UUID-like strings
+      
+      const projectId = projectMatch?.[1];
+
+      if (!projectId) {
+        console.error('❌ Could not find project ID in the projects list output');
+        console.log('  Raw output was:');
+        console.log(projectsOutput);
+        
+        // Ask user to provide the project ID manually
+        console.log('\nPlease run "npx supabase projects list" manually and look for a reference ID.');
+        console.log('Alternatively, add SUPABASE_PROJECT_ID to your .env file');
+        
+        // Try to extract project names at least to help the user
+        const projectNameMatches = projectsOutput.match(/\|\s+([a-z0-9-_]+)\s+\|/ig);
+        
+        if (projectNameMatches && projectNameMatches.length > 0) {
+          console.log('\nDetected project names that might help identify the project:');
+          projectNameMatches.forEach(match => {
+            console.log(`- ${match.replace(/\|\s+|\s+\|/g, '').trim()}`);
+          });
+        }
+        
+        throw new Error('Project ID not found');
+      }
+      
+      return projectId;
+    };
+
+    // Get the project ID
+    const projectId = await getProjectId();
+    console.log(`✅ Using project ID: ${projectId}`);
+    console.log('💼 Generating TypeScript types...');
+
+    // Generate types using the CLI and save to file
+    const { stdout: typesOutput } = await execAsync(
+      `npx supabase gen types typescript --project-id ${projectId}`, 
+      { env }
+    );
+    
+    fs.writeFileSync(TYPES_OUTPUT, typesOutput);
+    console.log(`✅ Types written to: ${TYPES_OUTPUT}`);
+
+    // Parse the TypeScript types to extract table and enum information
+    console.log('🔄 Parsing TypeScript types to generate Zod schemas and enum types...');
+    const { enumTypes, tableTypes } = parseTypeScript(typesOutput);
+    
+    // Generate Zod schemas
+    const schemasContent = generateZodSchemas(tableTypes);
+    fs.writeFileSync(SCHEMAS_OUTPUT, schemasContent);
+    console.log(`✅ Schemas written to: ${SCHEMAS_OUTPUT}`);
+    
+    // Generate enum types
+    const enumsContent = generateEnumTypes(enumTypes);
+    fs.writeFileSync(ENUMS_OUTPUT, enumsContent);
+    console.log(`✅ Enum types written to: ${ENUMS_OUTPUT}`);
+    
+    // Generate repository functions
+    const repoContent = generateRepositoryFunctions(tableTypes);
+    fs.writeFileSync(REPO_OUTPUT, repoContent);
+    console.log(`✅ Repository functions written to: ${REPO_OUTPUT}`);
+
+    console.log('✨ Type generation complete!');
+  } catch (error: any) {
+    console.error(`❌ Error generating types: ${error?.message || 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Parse TypeScript output to extract table and enum information
+ */
+function parseTypeScript(typesCode: string): { enumTypes: Record<string, string[]>; tableTypes: string[] } {
+  console.log('🔍 Parsing TypeScript types...');
+  const enumTypes: Record<string, string[]> = {};
+  const tableTypes: string[] = [];
+  
+  // Create a temporary file to parse with TypeScript compiler API
+  const tempFilePath = path.join(__dirname, '_temp_types.ts');
+  fs.writeFileSync(tempFilePath, typesCode);
+  
+  try {
+    const program = ts.createProgram([tempFilePath], { allowJs: true });
+    const sourceFile = program.getSourceFile(tempFilePath);
+    
+    if (!sourceFile) {
+      throw new Error('Failed to parse TypeScript file');
+    }
+    
+    // Traverse the AST to find Database type and extract tables and enums
+    ts.forEachChild(sourceFile, (node: ts.Node) => {
+      if (ts.isTypeAliasDeclaration(node) && node.name.text === 'Database') {
+        // Look for the public.Tables section
+        if (ts.isTypeLiteralNode(node.type)) {
+          node.type.members.forEach((member: ts.TypeElement) => {
+            if (ts.isPropertySignature(member) && 
+                member.name && 
+                ts.isIdentifier(member.name) && 
+                member.name.text === 'public') {
+              
+              if (member.type && ts.isTypeLiteralNode(member.type)) {
+                // Find the Tables property
+                member.type.members.forEach((publicMember: ts.TypeElement) => {
+                  if (ts.isPropertySignature(publicMember) && 
+                      publicMember.name && 
+                      ts.isIdentifier(publicMember.name)) {
+                    
+                    if (publicMember.name.text === 'Tables') {
+                      // Extract table names
+                      if (publicMember.type && ts.isTypeLiteralNode(publicMember.type)) {
+                        publicMember.type.members.forEach((tableMember: ts.TypeElement) => {
+                          if (ts.isPropertySignature(tableMember) && 
+                              tableMember.name && 
+                              ts.isIdentifier(tableMember.name)) {
+                            tableTypes.push(tableMember.name.text);
+                          }
+                        });
+                      }
+                    } else if (publicMember.name.text === 'Enums') {
+                      // Extract enum types
+                      if (publicMember.type && ts.isTypeLiteralNode(publicMember.type)) {
+                        publicMember.type.members.forEach((enumMember: ts.TypeElement) => {
+                          if (ts.isPropertySignature(enumMember) && 
+                              enumMember.name && 
+                              ts.isIdentifier(enumMember.name) &&
+                              enumMember.type) {
+                            
+                            const enumName = enumMember.name.text;
+                            
+                            // The enum values are likely in a union type or array literal
+                            if (ts.isLiteralTypeNode(enumMember.type) && 
+                                ts.isArrayLiteralExpression(enumMember.type.literal)) {
+                              const values: string[] = [];
+                              enumMember.type.literal.elements.forEach((el: ts.Expression) => {
+                                if (ts.isStringLiteral(el)) {
+                                  values.push(el.text);
+                                }
+                              });
+                              enumTypes[enumName] = values;
+                            }
+                            // Try to extract from string literal
+                            else if (ts.isLiteralTypeNode(enumMember.type) && 
+                                     ts.isStringLiteral(enumMember.type.literal)) {
+                              try {
+                                // This might be a JSON string array
+                                const parsedValues = JSON.parse(enumMember.type.literal.text);
+                                if (Array.isArray(parsedValues)) {
+                                  enumTypes[enumName] = parsedValues;
+                                }
+                              } catch (e) {
+                                console.log(`Could not parse enum values for ${enumName}`);
+                              }
+                            }
+                          }
+                        });
+                      }
+                    }
+                  }
+                });
+              }
+            }
+          });
+        }
+      }
+    });
+    
+    console.log(`📋 Found ${tableTypes.length} tables`);
+    console.log(`📋 Found ${Object.keys(enumTypes).length} enum types`);
+    
+    return { enumTypes, tableTypes };
+  } catch (error) {
+    console.error('Error parsing TypeScript:', error);
+    return { enumTypes: {}, tableTypes: [] };
+  } finally {
+    // Clean up the temporary file
+    if (fs.existsSync(tempFilePath)) {
+      fs.unlinkSync(tempFilePath);
+    }
+  }
+}
+
+/**
+ * Generate Zod schemas from table types
+ */
+function generateZodSchemas(tableTypes: string[]): string {
+  console.log('📝 Generating Zod schemas...');
+  
+  let content = `// Auto-generated Zod schemas from Supabase CLI
+// Generated on: ${new Date().toISOString()}
+
+import { z } from 'zod';
+import type { Database } from './generated.types';
+
+// Table schemas
+`;
+
+  // Add a generic type-safe schema generator
+  tableTypes.forEach(tableName => {
+    const pascalName = tableName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
+      
+    content += `
+// ${pascalName} schema
+export const ${tableName}Schema = z.object({
+  // This is a placeholder schema - for full schema definition,
+  // you'll need to define the actual fields based on your database structure
+  // Example: id: z.string().uuid()
+}).partial();
+
+export type ${pascalName}Schema = z.infer<typeof ${tableName}Schema>;
+`;
+  });
+
+  content += `
+// Helper type to get table row types
+export type TableRow<T extends keyof Database['public']['Tables']> = 
+  Database['public']['Tables'][T]['Row'];
+
+// Helper type to get table insert types
+export type TableInsert<T extends keyof Database['public']['Tables']> = 
+  Database['public']['Tables'][T]['Insert'];
+
+// Helper type to get table update types
+export type TableUpdate<T extends keyof Database['public']['Tables']> = 
+  Database['public']['Tables'][T]['Update'];
+`;
+
+  return content;
+}
+
+/**
+ * Generate enum types from enum information
+ */
+function generateEnumTypes(enumTypes: Record<string, string[]>): string {
+  console.log('📝 Generating enum types...');
+  
+  let content = `// Auto-generated enum types from Supabase CLI
+// Generated on: ${new Date().toISOString()}
+
+import { z } from 'zod';
+
+/**
+ * Database enum types
+ * These are generated from Supabase schema
+ */
+`;
+
+  // Generate TypeScript and Zod definitions for each enum
+  for (const [enumName, enumValues] of Object.entries(enumTypes)) {
+    if (enumValues.length === 0) {
+      continue;
+    }
+    
+    const pascalCaseName = enumName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
+
+    // Add TypeScript enum
+    content += `
+// ${pascalCaseName} enum
+export enum ${pascalCaseName} {
+`;
+
+    enumValues.forEach(val => {
+      const enumKey = val
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join('');
+      content += `  ${enumKey} = "${val}",\n`;
+    });
+    
+    content += `}
+
+// ${pascalCaseName} Zod validator
+export const ${enumName}Schema = z.enum([
+${enumValues.map(val => `  "${val}"`).join(',\n')}
+]);
+
+// ${pascalCaseName} Zod type
+export type ${pascalCaseName}Type = z.infer<typeof ${enumName}Schema>;
+
+`;
+  }
+
+  // Add utility function for working with enums
+  content += `
+/**
+ * Utility function to get all enum values for a given enum
+ */
+export function getEnumValues<T extends Record<string, string>>(enumObj: T): string[] {
+  return Object.values(enumObj);
+}
+`;
+
+  return content;
+}
+
+/**
+ * Generate repository functions
+ */
+function generateRepositoryFunctions(tableTypes: string[]): string {
+  console.log('📝 Generating repository functions...');
+  
+  let content = `// Auto-generated repository functions from Supabase CLI
+// Generated on: ${new Date().toISOString()}
+
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './generated.types';
+
+// Import the client from your existing setup
+import { supabaseClient } from './client';
+
+/**
+ * Type-safe repository factory
+ * Creates repository functions for any table with proper typing
+ */
+export function createRepository<T extends keyof Database['public']['Tables']>(
+  tableName: T
+) {
+  type Row = Database['public']['Tables'][T]['Row'];
+  type Insert = Database['public']['Tables'][T]['Insert'];
+  type Update = Database['public']['Tables'][T]['Update'];
+
+  return {
+    getAll: async () => {
+      const { data, error } = await supabaseClient
+        .from(tableName)
+        .select('*');
+      
+      if (error) throw error;
+      return data as Row[];
+    },
+    
+    getById: async (id: string) => {
+      const { data, error } = await supabaseClient
+        .from(tableName)
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as Row | null;
+    },
+    
+    create: async (record: Insert) => {
+      const { data, error } = await supabaseClient
+        .from(tableName)
+        .insert(record)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data as Row;
+    },
+    
+    update: async (id: string, record: Update) => {
+      const { data, error } = await supabaseClient
+        .from(tableName)
+        .update(record)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data as Row;
+    },
+    
+    delete: async (id: string) => {
+      const { error } = await supabaseClient
+        .from(tableName)
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    }
+  };
+}
+
+// Pre-generated repositories
+export const repositories = {
+${tableTypes.map(t => `  ${t}: createRepository('${t}')`).join(',\n')}
+};
+`;
+
+  return content;
+}
+
+// Execute the function
+generateTypes().catch(console.error);

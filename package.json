@@ -3,7 +3,8 @@
     "start": "bun --env-file=.env run --hot src/index.ts",
     "gen:types": "bun --env-file=.env run scripts/generate-types.ts",
     "gen:schema-types": "bun --env-file=.env run scripts/introspect-schema.ts",
-    "analyze:schema": "bun --env-file=.env run examples/query-schema-and-generate.ts"
+    "analyze:schema": "bun --env-file=.env run examples/query-schema-and-generate.ts",
+    "gen:cli-types": "bun --env-file=.env run scripts/cli-generate-types.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.5.0",
@@ -17,6 +18,7 @@
     "@types/bun": "latest",
     "@types/node": "^20.11.16",
     "supabase": "^2.23.4",
-    "supabase-to-zod": "^1.0.7"
+    "supabase-to-zod": "^1.0.7",
+    "typescript": "^5.8.3"
   }
 }

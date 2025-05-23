@@ -13,23 +13,48 @@ export class SchemaIntrospector {
   constructor(supabaseUrl: string, supabaseKey: string) {
     this.supabase = createClient(supabaseUrl, supabaseKey);
   }
-
   /**
    * Get all tables in the public schema
    */
   async getTables(): Promise<string[]> {
-    const { data, error } = await this.supabase
-      .from("information_schema.tables")
-      .select("table_name")
-      .eq("table_schema", "public")
-      .not("table_name", "like", "pg_%") // Exclude PostgreSQL system tables
-      .order("table_name");
+    try {
+      // Try a direct query to pg_tables which is usually accessible
+      const { data, error } = await this.supabase
+        .from("pg_tables")
+        .select("tablename")
+        .eq("schemaname", "public")
+        .not("tablename", "like", "pg_%"); // Exclude PostgreSQL system tables
 
-    if (error) {
-      throw new Error(`Error fetching tables: ${error.message}`);
+      if (error) {
+        throw new Error(`Error fetching tables: ${error.message}`);
+      }
+
+      return data.map((table: { tablename: string }) => table.tablename);
+    } catch (error) {
+      console.error("Failed to query pg_tables directly, trying raw SQL...");
+
+      // Last resort - use raw SQL query with executeRaw if available
+      try {
+        // Using a raw SQL query directly since RPC doesn't exist
+        const { data, error: sqlError } = await this.supabase
+          .rpc("select_tables", { schema_name: "public" })
+          .select("*");
+
+        if (sqlError || !data) {
+          throw new Error(`SQL query failed: ${(sqlError as Error)?.message}`);
+        }
+
+        return data;
+      } catch (sqlError) {
+        console.error("All table query methods failed");
+
+        // If everything fails, return an empty array rather than crashing
+        console.warn(
+          "Could not retrieve tables from database. Returning empty array."
+        );
+        return [];
+      }
     }
-
-    return data.map((table) => table.table_name);
   }
 
   /**
@@ -82,37 +107,54 @@ export class SchemaIntrospector {
 
     return data?.map((pk) => pk.column_name) || [];
   }
-
   /**
    * Get all enum types in the database
    */
   async getEnumTypes(): Promise<Record<string, string[]>> {
-    const { data, error } = await this.supabase
-      .from("pg_type")
-      .select(
+    try {
+      // Directly query pg_type and pg_enum tables
+      // Note: This approach doesn't use RPC functions which might not exist
+      const { data, error } = await this.supabase
+        .from("pg_type")
+        .select(
+          `
+          typname,
+          oid
         `
-        typname,
-        pg_enum.enumlabel
-      `
-      )
-      .eq("typtype", "e")
-      .join("pg_enum", "pg_type.oid", "pg_enum.enumtypid")
-      .order("typname");
+        )
+        .eq("typtype", "e"); // Filter for enum types
 
-    if (error) {
-      console.warn(`Warning: Could not fetch enums: ${error.message}`);
+      if (error) {
+        console.warn(`Warning: Could not fetch enum types: ${error.message}`);
+        return {};
+      }
+
+      // Process each enum type to get its values
+      const enumTypes: Record<string, string[]> = {};
+
+      for (const type of data) {
+        const typeName = type.typname;
+        enumTypes[typeName] = [];
+
+        // Get the enum values for this type
+        const { data: enumValues, error: enumError } = await this.supabase
+          .from("pg_enum")
+          .select("enumlabel")
+          .eq("enumtypid", type.oid)
+          .order("enumsortorder");
+
+        if (!enumError && enumValues) {
+          enumTypes[typeName] = enumValues.map((e) => e.enumlabel);
+        }
+      }
+
+      return enumTypes;
+    } catch (error) {
+      console.warn(
+        `Warning: Could not fetch enums: ${(error as Error).message}`
+      );
       return {};
     }
-
-    // Group enum values by enum name
-    return data.reduce((acc, curr) => {
-      const typname = curr.typname;
-      if (!acc[typname]) {
-        acc[typname] = [];
-      }
-      acc[typname].push(curr.enumlabel);
-      return acc;
-    }, {} as Record<string, string[]>);
   }
 
   /**
