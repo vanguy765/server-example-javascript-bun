@@ -1,5 +1,5 @@
 // Auto-generated enum types from Supabase schema
-// Generated on: 2025-05-23T00:26:02.702Z
+// Generated on: 2025-05-23T05:10:07.697Z
 
 /**
  * Database enum types

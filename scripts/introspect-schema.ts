@@ -1,338 +1,167 @@
 import * as fs from "fs";
 import * as path from "path";
-import { SchemaIntrospector } from "../src/supabase/schema-introspector";
 import { exec } from "child_process";
 import { promisify } from "util";
 
 const execAsync = promisify(exec);
 
 /**
- * Type Generation Script
+ * Zod Schema Generation Script from TypeScript Types
  *
- * This script automatically generates TypeScript types and Zod validation schemas
- * by introspecting your Supabase database schema.
+ * This script generates Zod validation schemas from the existing
+ * TypeScript types located in 'src/supabase/generated.types.ts'.
+ * It uses the 'supabase-to-zod' utility.
+ * It pre-processes the input types to replace problematic Arg types
+ * and post-processes the output to fix import paths.
  */
 
-// Output file paths
-const TYPES_OUTPUT = path.join(__dirname, "../src/supabase/generated.types.ts");
-const SCHEMAS_OUTPUT = path.join(
-  __dirname,
-  "../src/supabase/generated.schemas.ts"
+// Define absolute paths for fs operations within the script
+const projectRoot = path.join(__dirname, ".."); // Assuming scripts is one level down from project root
+const TYPES_INPUT_ABS_PATH = path.join(
+  projectRoot,
+  "src/supabase/generated.types.ts"
 );
-const REPO_OUTPUT = path.join(__dirname, "../src/supabase/generated-repo.ts");
-const ENUMS_OUTPUT = path.join(__dirname, "../src/supabase/generated.enums.ts");
+const TEMP_TYPES_INPUT_ABS_PATH = path.join(
+  projectRoot,
+  "src/supabase/generated.types.temp.ts"
+);
+const SCHEMAS_OUTPUT_ABS_PATH = path.join(
+  projectRoot,
+  "src/supabase/generated.schemas.ts"
+);
 
-// Supabase credentials from environment variables
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+// Define relative paths for the CLI command (relative to projectRoot)
+const TEMP_TYPES_INPUT_RELATIVE_PATH = "src/supabase/generated.types.temp.ts";
+const SCHEMAS_OUTPUT_RELATIVE_PATH = "src/supabase/generated.schemas.ts";
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error(
-    "❌ Missing environment variables: SUPABASE_URL and/or SUPABASE_ANON_KEY"
-  );
-  console.log("Set these variables in your .env file or environment");
-  process.exit(1);
-}
+async function generateZodSchemasFromTypes() {
+  console.log("🚀 Starting Zod schema generation from TypeScript types...");
 
-async function generateTypes() {
-  console.log("🚀 Starting schema introspection...");
+  if (!fs.existsSync(TYPES_INPUT_ABS_PATH)) {
+    console.error(
+      `❌ Original TypeScript types file not found at: ${TYPES_INPUT_ABS_PATH}`
+    );
+    console.log(
+      "  Please ensure 'generated.types.ts' exists, possibly by running 'pnpm gen:types:direct' or a similar script."
+    );
+    process.exit(1);
+  }
 
   try {
-    // Try primary approach using SchemaIntrospector
-    await generateTypesWithIntrospection();
+    // 1. Pre-process the input file
+    console.log(
+      `  Pre-processing TypeScript types from: ${TYPES_INPUT_ABS_PATH}`
+    );
+    let typesContent = fs.readFileSync(TYPES_INPUT_ABS_PATH, "utf8");
+
+    // Replace 'Args: Record<PropertyKey, never>' with 'Args: {}'
+    const problematicArgsRegex = /Args:\s*Record<PropertyKey,\s*never>/g;
+    const originalContent = typesContent;
+    typesContent = typesContent.replace(problematicArgsRegex, "Args: {}");
+
+    if (typesContent !== originalContent) {
+      console.log(
+        "    ✅ Replaced 'Args: Record<PropertyKey, never>' with 'Args: {}'."
+      );
+    } else {
+      console.warn(
+        "    ⚠️ No 'Args: Record<PropertyKey, never>' found to replace. Proceeding with original content for temp file."
+      );
+    }
+
+    fs.writeFileSync(TEMP_TYPES_INPUT_ABS_PATH, typesContent);
+    console.log(
+      `    Temporary pre-processed types file created: ${TEMP_TYPES_INPUT_ABS_PATH}`
+    );
+
+    console.log(`  Output Zod schemas (absolute): ${SCHEMAS_OUTPUT_ABS_PATH}`);
+
+    // 2. Run supabase-to-zod
+    const command = `npx supabase-to-zod --input "${TEMP_TYPES_INPUT_RELATIVE_PATH}" --output "${SCHEMAS_OUTPUT_RELATIVE_PATH}"`;
+
+    console.log(`  Executing: ${command}`);
+    const { stdout, stderr } = await execAsync(command, { cwd: projectRoot });
+
+    if (stderr) {
+      if (
+        stderr.toLowerCase().includes("error") &&
+        !stderr.toLowerCase().includes("some schemas can't be generated")
+      ) {
+        // Ignore the "Some schemas can't be generated" if it's the only error, as we are trying to work around it.
+        console.error("❌ Errors during Zod schema generation:");
+        console.error(stderr);
+      } else {
+        console.warn("⚠️ supabase-to-zod output (stderr):");
+        console.warn(stderr);
+      }
+    }
+
+    if (stdout) {
+      console.log("  supabase-to-zod output (stdout):");
+      console.log(stdout);
+    }
+
+    // 3. Post-process the generated schemas file
+    if (fs.existsSync(SCHEMAS_OUTPUT_ABS_PATH)) {
+      console.log(
+        `  Post-processing Zod schema file: ${SCHEMAS_OUTPUT_ABS_PATH}`
+      );
+      let schemasFileContent = fs.readFileSync(SCHEMAS_OUTPUT_ABS_PATH, "utf8");
+      const importRegex = /from\s+['"]\.\/generated\.types\.temp['"]/g;
+      const originalSchemasContent = schemasFileContent;
+      schemasFileContent = schemasFileContent.replace(
+        importRegex,
+        'from "./generated.types"'
+      );
+
+      if (schemasFileContent !== originalSchemasContent) {
+        fs.writeFileSync(SCHEMAS_OUTPUT_ABS_PATH, schemasFileContent);
+        console.log("    ✅ Corrected import paths in generated.schemas.ts.");
+      } else {
+        console.warn(
+          "    ⚠️ No import paths from '.generated.types.temp' found to correct."
+        );
+      }
+
+      const stats = fs.statSync(SCHEMAS_OUTPUT_ABS_PATH);
+      if (stats.size > 0) {
+        console.log(
+          `✅ Successfully generated and processed Zod schemas: ${SCHEMAS_OUTPUT_ABS_PATH}`
+        );
+      } else {
+        console.error(
+          `❌ Zod schema file was created but is empty: ${SCHEMAS_OUTPUT_ABS_PATH}`
+        );
+      }
+    } else {
+      console.error(
+        `❌ Zod schema file was not created at: ${SCHEMAS_OUTPUT_ABS_PATH}`
+      );
+      throw new Error("Zod schema generation failed to create output file.");
+    }
   } catch (error: any) {
-    console.error(`❌ Error generating types: ${error?.message || 'Unknown error'}`);
-    console.log("  Falling back to Supabase CLI for type generation...");
-    
-    try {
-      // Fallback to Supabase CLI
-      await generateTypesWithCli();
-    } catch (cliError: any) {
-      console.error(`❌ CLI fallback also failed: ${cliError?.message || 'Unknown error'}`);
-      generateEmptyFiles();
+    console.error("❌ Error executing Zod schema generation command:");
+    if (error.stdout) console.error("Stdout:", error.stdout);
+    if (error.stderr) console.error("Stderr:", error.stderr);
+    if (error.message) console.error("Message:", error.message);
+    process.exit(1);
+  } finally {
+    // 4. Clean up the temporary file
+    if (fs.existsSync(TEMP_TYPES_INPUT_ABS_PATH)) {
+      fs.unlinkSync(TEMP_TYPES_INPUT_ABS_PATH);
+      console.log(`  Temporary file deleted: ${TEMP_TYPES_INPUT_ABS_PATH}`);
     }
   }
-}
-
-async function generateTypesWithIntrospection() {
-  // Create the introspector
-  const introspector = new SchemaIntrospector(supabaseUrl, supabaseKey);
-
-  // Get all tables
-  const tables = await introspector.getTables();
-  console.log(`📋 Found ${tables.length} tables: ${tables.join(", ")}`);
-
-  // Initialize output content    // Fetch enum types
-  const enumTypes = await introspector.getEnumTypes();
-  const enumNames = Object.keys(enumTypes);
-  console.log(
-    `📋 Found ${enumNames.length} enum types: ${
-      enumNames.join(", ") || "none"
-    }`
-  );
-
-  let typesContent = `// Auto-generated TypeScript types from Supabase schema
-// Generated on: ${new Date().toISOString()}
-
-export type Database = {
-  public: {
-    Tables: {
-`;
-  let schemasContent = `// Auto-generated Zod schemas from Supabase schema
-// Generated on: ${new Date().toISOString()}
-
-import { z } from 'zod';
-
-`;
-
-  // Generate enums content
-  let enumsContent = `// Auto-generated enum types from Supabase schema
-// Generated on: ${new Date().toISOString()}
-
-/**
- * Database enum types
- * These are generated directly from PostgreSQL enum types
- */
-
-`;
-
-  // Add each enum type with TypeScript and Zod definitions
-  for (const [enumName, enumValues] of Object.entries(enumTypes)) {
-    const pascalCaseName = enumName
-      .split("_")
-      .map(
-        (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-      )
-      .join("");
-
-    // Add TypeScript enum
-    enumsContent += `// ${pascalCaseName} enum\n`;
-    enumsContent += `export enum ${pascalCaseName} {\n`;
-    enumValues.forEach((val) => {
-      const enumKey = val
-        .split("_")
-        .map(
-          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        )
-        .join("");
-      enumsContent += `  ${enumKey} = "${val}",\n`;
-    });
-    enumsContent += `}\n\n`;
-
-    // Add Zod enum validator
-    enumsContent += `// ${pascalCaseName} Zod validator\n`;
-    enumsContent += `export const ${enumName}Schema = z.enum([\n`;
-    enumValues.forEach((val) => {
-      enumsContent += `  "${val}",\n`;
-    });
-    enumsContent += `]);\n\n`;
-
-    // Add Zod type export
-    enumsContent += `// ${pascalCaseName} Zod type\n`;
-    enumsContent += `export type ${pascalCaseName}Type = z.infer<typeof ${enumName}Schema>;\n\n`;
-  }
-
-  // Add utility function for working with enums
-  enumsContent += `/**
- * Utility function to get all enum values for a given enum
- */
-export function getEnumValues<T extends Record<string, string>>(enumObj: T): string[] {
-  return Object.values(enumObj);
-}
-`;
-
-  let repoContent = `// Auto-generated repository functions from Supabase schema
-// Generated on: ${new Date().toISOString()}
-
-import { supabaseClient } from './client';
-
-`;
-
-  // Process each table
-  for (const tableName of tables) {
-    console.log(`🔍 Processing table: ${tableName}`);
-
-    // Generate types and schemas for the current table
-    const tableInterface = await introspector.generateTableInterface(
-      tableName
-    );
-    const tableSchema = await introspector.generateTableSchema(tableName);
-    const tableRepo = await introspector.generateRepositoryFunctions(
-      tableName
-    );
-
-    // Add to the types file
-    typesContent += `    ${tableName}: ${tableInterface};\n`;
-
-    // Add to the schemas file
-    schemasContent += tableSchema;
-
-    // Add to the repo file
-    repoContent += tableRepo;
-  } // Complete the types file
-  typesContent += `  };
-  Functions: Record<string, unknown>;
-  Enums: {
-`;
-
-  // Add enum types to the Database type
-  for (const [enumName, enumValues] of Object.entries(enumTypes)) {
-    typesContent += `    ${enumName}: ${JSON.stringify(enumValues)};\n`;
-  }
-
-  typesContent += `  };
-};
-`;
-
-  // Add repository factory
-  repoContent += `
-/**
- * Repository factory - creates type-safe repository functions for any table
- */
-export function createRepository<T extends keyof Database['public']['Tables']>(
-  tableName: T
-) {
-  return {
-    getAll: async () => {
-      const { data, error } = await supabaseClient.from(tableName).select('*');
-      if (error) throw error;
-      return data;
-    },
-    getById: async (id: string) => {
-      const { data, error } = await supabaseClient
-        .from(tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-    create: async (record: any) => {
-      const { data, error } = await supabaseClient
-        .from(tableName)
-        .insert(record)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    update: async (id: string, record: any) => {
-      const { data, error } = await supabaseClient
-        .from(tableName)
-        .update(record)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    delete: async (id: string) => {
-      const { error } = await supabaseClient
-        .from(tableName)
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    }
-  };
-}
-
-// Pre-generated repositories
-export const repositories = {
-${tables.map((t) => `  ${t}: createRepository('${t}')`).join(",\n")}
-};
-`; // Write output files
-  fs.writeFileSync(TYPES_OUTPUT, typesContent);
-  fs.writeFileSync(SCHEMAS_OUTPUT, schemasContent);
-  fs.writeFileSync(REPO_OUTPUT, repoContent);
-  fs.writeFileSync(ENUMS_OUTPUT, enumsContent);
-
-  console.log("✅ Successfully generated:");
-  console.log(`- Types: ${TYPES_OUTPUT}`);
-  console.log(`- Schemas: ${SCHEMAS_OUTPUT}`);
-  console.log(`- Repository functions: ${REPO_OUTPUT}`);
-  console.log(`- Enum types: ${ENUMS_OUTPUT}`);
-} catch (error) {
-  console.error("❌ Error generating types:", error);
-  process.exit(1);
-}
-}
-
-async function generateTypesWithCli() {
-  // Check for access token
-  if (!process.env.SUPABASE_ACCESS_TOKEN) {
-    console.error("❌ Missing SUPABASE_ACCESS_TOKEN environment variable.");
-    console.log("  Please add this to your .env file or set it in your environment.");
-    console.log("  You can get this token from https://app.supabase.io/account/tokens");
-    throw new Error("Missing SUPABASE_ACCESS_TOKEN");
-  }
-
-  // Get project ID from the Supabase projects list
-  console.log("  Getting project ID...");
-  const { stdout: projectsOutput } = await execAsync(
-    `npx supabase projects list --access-token ${process.env.SUPABASE_ACCESS_TOKEN}`
-  );
-  
-  // Find the project ID - look for any project row in the output
-  console.log("  Searching for project ID in CLI output...");
-  
-  // This regex looks for ID format at start of a line followed by pipe
-  const projectMatch = projectsOutput.match(/^([a-z0-9-]+)\s*\|/m);
-  const projectId = projectMatch?.[1];
-
-  if (!projectId) {
-    console.error("❌ Could not find project ID in the projects list output");
-    console.log("  Raw output was:");
-    console.log(projectsOutput);
-    throw new Error("Project ID not found");
-  }
-
-  console.log(`  Found project ID: ${projectId}`);
-  console.log("  Generating TypeScript types...");
-
-  // Generate types using the CLI and save to file
-  const { stdout } = await execAsync(
-    `npx supabase gen types typescript --project-id ${projectId}`
-  );
-  
-  fs.writeFileSync(TYPES_OUTPUT, stdout);
-  
-  // Create minimal empty schema and enum files
-  const minimalSchemaContent = `// Auto-generated Zod schemas (fallback mode)
-import { z } from 'zod';
-// No schemas were generated because introspection failed
-// and CLI-only mode was used.
-`;
-
-  const minimalEnumContent = `// Auto-generated enum types (fallback mode)
-// No enums were found in the database or introspection failed
-`;
-
-  const minimalRepoContent = `// Auto-generated repository functions (fallback mode)
-import { createClient } from '@supabase/supabase-js';
-
-// Create a generic repository factory function
-export function createRepository(tableName: string) {
-  return {
-    // Repository methods would normally go here
-    // This is a fallback placeholder
-  };
-}
-`;
-
-  fs.writeFileSync(SCHEMAS_OUTPUT, minimalSchemaContent);
-  fs.writeFileSync(ENUMS_OUTPUT, minimalEnumContent);
-  fs.writeFileSync(REPO_OUTPUT, minimalRepoContent);
-
-  console.log(`✅ Generated files using CLI fallback approach:`);
-  console.log(`   - ${TYPES_OUTPUT}`);
-  console.log(`   - ${SCHEMAS_OUTPUT}`);
-  console.log(`   - ${ENUMS_OUTPUT}`);
-  console.log(`   - ${REPO_OUTPUT}`);
 }
 
 // Run the generator
-generateTypes().catch(console.error);
+generateZodSchemasFromTypes().catch((error) => {
+  console.error("Unhandled error in script:", error);
+  process.exit(1);
+});
+
+// Removed old functions:
+// - generateTypes (old main function)
+// - generateTypesWithIntrospection (relied on SchemaIntrospector)
+// - generateEmptyFiles (less relevant now, supabase-to-zod handles errors)
+// - generateTypesWithCli (was for TypeScript types, not Zod from types)

@@ -39,6 +39,12 @@ importers:
       supabase-to-zod:
         specifier: ^1.0.7
         version: 1.0.7
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      zod-to-ts:
+        specifier: ^1.2.0
+        version: 1.2.0(typescript@5.8.3)(zod@3.25.22)
 
 packages:
 
@@ -2169,6 +2175,12 @@ packages:
   yargs-parser@20.2.9:
     resolution: {integrity: sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w==}
     engines: {node: '>=10'}
+
+  zod-to-ts@1.2.0:
+    resolution: {integrity: sha512-x30XE43V+InwGpvTySRNz9kB7qFU8DlyEy7BsSTCHPH1R0QasMmHWZDCzYm6bVXtj/9NNJAZF3jW8rzFvH5OFA==}
+    peerDependencies:
+      typescript: ^4.9.4 || ^5.0.2
+      zod: ^3
 
   zod@3.25.22:
     resolution: {integrity: sha512-RJcat0cZeUQYkl1PqHRP2YJ1muB9+qsJ7qQKHUE4CgChMZNtdWFNZON22Wk21XsL3FXsmjYsxD9YEVmqE/Kjmg==}
@@ -5033,5 +5045,10 @@ snapshots:
   yallist@5.0.0: {}
 
   yargs-parser@20.2.9: {}
+
+  zod-to-ts@1.2.0(typescript@5.8.3)(zod@3.25.22):
+    dependencies:
+      typescript: 5.8.3
+      zod: 3.25.22
 
   zod@3.25.22: {}
