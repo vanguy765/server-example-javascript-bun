@@ -23,7 +23,8 @@ app.post("/", async (c) => {
   // const parseResult = requestBodySchema.safeParse(await c.req.json());
   // if (!parseResult.success) { /* handle validation error */ }
   // const { phoneNumberId, assistantId, customerNumber } = parseResult.data;
-  const { phoneNumberId, assistantId, customerNumber } = await c.req.json<any>(); // Using <any> if not validating body yet
+  const { phoneNumberId, assistantId, customerNumber } =
+    await c.req.json<any>(); // Using <any> if not validating body yet
 
   console.log(
     `Received request to place outbound call with 
@@ -38,7 +39,7 @@ app.post("/", async (c) => {
   try {
     // 3. Create a repository instance for the 'tenants' table.
     //    Ensure 'tenants' is the exact name of your table in the database schema.
-    const tenantsRepository = createRepository('tenants');
+    const tenantsRepository = createRepository("tenants");
 
     // 4. Call the getAll() method on the repository instance.
     //    Ideally, `createRepository('tenants').getAll()` is typed to return `Promise<TenantRow[]>`.
@@ -62,23 +63,22 @@ app.post("/", async (c) => {
       tenants = []; // Default to an empty array if no tenants were fetched but no error occurred
     }
 
-    console.log("Successfully retrieved tenants using dynamic repository:", tenants);
+    console.log(
+      "Successfully retrieved tenants using dynamic repository:",
+      tenants
+    );
 
     if (tenants && tenants.length > 0 && tenants[0]) {
       // Example: Accessing a property with type safety. 'name' would be checked by TypeScript.
       // console.log("First tenant name:", tenants[0].name);
     }
-
   } catch (error) {
-    console.error("Failed to retrieve tenants using dynamic repository:", error);
+    console.error(
+      "Failed to retrieve tenants using dynamic repository:",
+      error
+    );
     tenants = undefined; // Ensure tenants is undefined on error
   }
-
-// in a try catch block, get the tenant with domain = "acmecleaning.com"
-
-
-
-process.exit(0); // This is not needed in a server context, but included for clarity
 
   // VAPI Call Section
   try {
@@ -98,15 +98,23 @@ process.exit(0); // This is not needed in a server context, but included for cla
     });
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => "Could not read error body");
-      throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
+      const errorBody = await response
+        .text()
+        .catch(() => "Could not read error body");
+      throw new Error(
+        `HTTP error! status: ${response.status}, body: ${errorBody}`
+      );
     }
 
     const data = await response.json();
     return c.json(data, 200);
-  } catch (error) { // Changed from 'error: any' to 'error' (implicitly unknown)
+  } catch (error) {
+    // Changed from 'error: any' to 'error' (implicitly unknown)
     console.error("VAPI call failed:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during VAPI call";
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An unknown error occurred during VAPI call";
     return c.json(
       {
         message: "Failed to place outbound call",
