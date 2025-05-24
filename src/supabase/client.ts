@@ -6,3 +6,15 @@ export const supabaseClient = createClient(
   envConfig.supabase.url,
   envConfig.supabase.key
 );
+
+// Create an admin client instance with service role key
+export const adminSupabaseClient = createClient(
+  envConfig.supabase.url,
+  envConfig.supabase.serviceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
