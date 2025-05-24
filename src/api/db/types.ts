@@ -31,6 +31,14 @@ export type ProposedOrderInsertInput = z.input<
   typeof proposedOrdersInsertSchema
 >;
 
+// Enhanced proposed order type that includes additional customer information
+export interface EnhancedProposedOrder extends ProposedOrderInsertInput {
+  customer_first_name?: string;
+  customer_last_name?: string;
+  customer_email?: string;
+  tenant_name?: string;
+}
+
 export const COMPLETED_ORDER_STATUSES: z.infer<typeof orderStatusSchema>[] = [
   "delivered",
   "user_confirmed",

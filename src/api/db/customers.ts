@@ -31,11 +31,15 @@ export async function getCustomerByUserIdFromDb(
  * Creates a new customer record in the database
  * @param userId - The ID of the user to create a customer for
  * @param tenantId - The tenant ID to associate with the customer
+ * @param firstName - (Optional) The first name of the customer
+ * @param lastName - (Optional) The last name of the customer
  * @returns Promise resolving to the created customer record or null if creation fails
  */
 export async function createCustomerInDb(
   userId: string,
-  tenantId: string
+  tenantId: string,
+  firstName?: string,
+  lastName?: string
 ): Promise<CustomerRow | null> {
   const repo = createRepository("customers");
   try {
@@ -45,8 +49,8 @@ export async function createCustomerInDb(
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_active: true,
-      first_name: "DefaultFirst",
-      last_name: "DefaultLast",
+      first_name: firstName ?? "DefaultFirst",
+      last_name: lastName ?? "DefaultLast",
       email: `${userId.substring(0, 8)}@customerexample.com`,
     };
     const validated = customersInsertSchema.parse(customerData);

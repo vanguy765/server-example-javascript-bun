@@ -33,6 +33,10 @@ app.post("/", async (c) => {
     customerNumber: ${customerNumber}`
   );
 
+  // =============================================================================
+  // VALIDATE USER, GET DB DATA: TENANT, CUSTOMER, PROPOSED ORDER
+  // =============================================================================
+
   // 2. Declare the 'tenants' variable with the derived TypeScript type
   let tenants: TenantRow[] | undefined;
 
@@ -80,6 +84,13 @@ app.post("/", async (c) => {
     tenants = undefined; // Ensure tenants is undefined on error
   }
 
+  // =============================================================================
+  // BUILD THE PROMPT FOR THE ASSISTANT
+  // =============================================================================
+
+  // =============================================================================
+  //VAPI CALL SECTION
+  // =============================================================================
   // VAPI Call Section
   try {
     const response = await fetch(`${envConfig.vapi.baseUrl}/call/phone`, {

@@ -1,3 +1,6 @@
+// =============================================================================
+// IMPORTS AND DEPENDENCIES
+// =============================================================================
 import { createRepository } from "../supabase/generated-repo";
 import { createClient } from "@supabase/supabase-js";
 import { AuthUser, isAuthError } from "@supabase/supabase-js";
@@ -18,9 +21,13 @@ import {
   OrderItemRow,
   OrderInsertInput,
   ProposedOrderInsertInput,
+  EnhancedProposedOrder,
   COMPLETED_ORDER_STATUSES,
 } from "./db/types";
 
+// =============================================================================
+// CONFIGURATION AND INITIALIZATION
+// =============================================================================
 // Create admin client
 const adminSupabaseClient = createClient(
   envConfig.supabase.url,
@@ -48,13 +55,20 @@ import {
   getLastOrderWithItemsFromDb,
 } from "./db/orders";
 import { getProductDetailsById } from "./db/products";
+import { UUID } from "crypto";
 
+// =============================================================================
+// GLOBAL CONSTANTS AND CONFIGURATION
+// =============================================================================
 const phoneForWorkflow = "+17787754146";
-const tenantIdForWorkflow = "f0555d1a-5da7-4d15-b864-a1c6b16458a8";
-// Default order ID will be set during initialization
+let tenantIdForWorkflow = "f0555d1a-5da7-4d15-b864-a1c6b16458a8"; // Default tenant ID
+let tenantForWorkflow: any = null; // Global variable to store tenant information
 let DEFAULT_ORDER_ID: string | null = null;
 const PLACEHOLDER_CALL_ID = "test-call-id-reorderbot";
 
+// =============================================================================
+// DEFAULT ORDER INITIALIZATION
+// =============================================================================
 async function initializeDefaultOrder() {
   if (DEFAULT_ORDER_ID) return; // Already initialized
 
@@ -106,25 +120,139 @@ async function initializeDefaultOrder() {
   }
 }
 
+// =============================================================================
+// TENANT FUNCTIONS
+// =============================================================================
+async function getTenantFromDomain(): Promise<any> {
+  const domain = "acmecleaning.com";
+  console.log(`getTenantFromDomain: Using domain "${domain}"`);
+
+  try {
+    const { data: tenantData, error: tenantError } = await adminSupabaseClient
+      .from("tenants")
+      .select("*")
+      .eq("domain", domain)
+      .single();
+
+    if (tenantError) {
+      console.error(`Error fetching tenant for domain ${domain}:`, tenantError);
+      // Return default tenant object for error case
+      return {
+        id: "f0555d1a-5da7-4d15-b864-a1c6b16458a8",
+        name: "Acme Cleaning",
+        domain: "acmecleaning.com",
+      };
+    }
+
+    if (!tenantData) {
+      console.warn(`No tenant found for domain ${domain}`);
+      // Return default tenant object when no tenant is found
+      return {
+        id: "f0555d1a-5da7-4d15-b864-a1c6b16458a8",
+        name: "Acme Cleaning",
+        domain: "acmecleaning.com",
+      };
+    }
+
+    console.log(
+      `getTenantFromDomain: Found tenant for domain "${domain}":`,
+      JSON.stringify(tenantData, null, 2)
+    );
+
+    return tenantData;
+  } catch (e: any) {
+    console.error(`getTenantFromDomain Error: ${e.message}`, e);
+    // Return default tenant object for any exceptions
+    return {
+      id: "f0555d1a-5da7-4d15-b864-a1c6b16458a8",
+      name: "Acme Cleaning",
+      domain: "acmecleaning.com",
+    };
+  }
+}
+
+async function getTenantIdFromDomain(): Promise<string> {
+  // let domain = envConfig.supabase.url.split(".")[0].replace("https://", "");  if (domain === "localhost") {
+  //   domain = "acmecleaning.com";
+  // }
+  // Use the domain from environment or the default for localhost
+
+  const domain = "acmecleaning.com";
+  console.log(`getTenantIdFromDomain: Using domain "${domain}"`);
+
+  try {
+    const { data: tenantData, error: tenantError } = await adminSupabaseClient
+      .from("tenants")
+      .select("*")
+      .eq("domain", domain)
+      .single();
+
+    if (tenantError) {
+      console.error(`Error fetching tenant for domain ${domain}:`, tenantError);
+      // Return default tenant ID for error case
+      return "f0555d1a-5da7-4d15-b864-a1c6b16458a8";
+    }
+
+    if (!tenantData) {
+      console.warn(`No tenant found for domain ${domain}`);
+      // Return default tenant ID when no tenant is found
+      return "f0555d1a-5da7-4d15-b864-a1c6b16458a8";
+    }
+
+    console.log(
+      `getTenantIdFromDomain: Found tenant for domain "${domain}":`,
+      JSON.stringify(tenantData, null, 2)
+    );
+
+    return tenantData.id;
+  } catch (e: any) {
+    console.error(`getTenantIdFromDomain Error: ${e.message}`, e);
+    // Return default tenant ID for any exceptions
+    return "f0555d1a-5da7-4d15-b864-a1c6b16458a8";
+  }
+}
+
 // COMPLETED_ORDER_STATUSES is now imported from ./db/types
 
+// =============================================================================
+// MAIN USER WORKFLOW HANDLER
+// =============================================================================
+/**
+ * Handles the complete user workflow for the reorder bot:
+ * 1. Finds/creates user authentication and profile
+ * 2. Establishes customer record
+ * 3. Retrieves or creates last order
+ * 4. Prepares proposed order data for the agent
+ *
+ * @returns Object containing user profile, customer, last order, and proposed order data
+ */
 async function handleUserWorkflow(): Promise<Object | null> {
   let userProfile: UserRow | null = null;
   console.log("handleUserWorkflow: Starting...");
   try {
+    // Get tenant id from domain
+
+    // SECTION 1: User Authentication and Profile Setup
+    // ---------------------------------------------
+    // Check if user exists in auth system
     let authUser = await findAuthUserByPhoneWithAdmin(phoneForWorkflow);
     if (authUser?.id) {
       console.log(
         `handleUserWorkflow: Auth user found: ${authUser.id}. Ensuring profile.`
       );
+      // Try to fetch existing user profile
       const { data: profile, error: profileError } = await adminSupabaseClient
         .from("users")
         .select("*")
         .eq("id", authUser.id)
         .single();
       if (profileError && profileError.code !== "PGRST116") throw profileError;
-      if (profile) userProfile = usersRowSchema.parse(profile);
-      else {
+
+      if (profile) {
+        // Use existing profile
+        userProfile = usersRowSchema.parse(profile);
+      } else {
+        // Create new profile for existing auth user
         const profileData: UserInsertInput = {
           id: authUser.id,
           email:
@@ -135,6 +263,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
           updated_at: new Date().toISOString(),
           is_active: true,
         };
+        // Validate and insert new profile
         const validated = usersInsertSchema.parse(profileData);
         const { data: newProf, error: insError } = await adminSupabaseClient
           .from("users")
@@ -147,6 +276,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
         userProfile = usersRowSchema.parse(newProf);
       }
     } else {
+      // Create new user and profile if auth user doesn't exist
       console.log(
         "handleUserWorkflow: No auth user found. Creating user and profile."
       );
@@ -161,6 +291,9 @@ async function handleUserWorkflow(): Promise<Object | null> {
       `handleUserWorkflow: User profile established: ${userProfile.id}`
     );
 
+    // SECTION 2: Customer Record Management
+    // ---------------------------------------------
+    // Get or create customer record for the user
     let customer = await getCustomerByUserIdFromDb(userProfile.id);
     if (!customer) {
       customer = await createCustomerInDb(userProfile.id, tenantIdForWorkflow);
@@ -168,17 +301,23 @@ async function handleUserWorkflow(): Promise<Object | null> {
     }
     console.log(`handleUserWorkflow: Customer established: ${customer.id}`);
 
+    // SECTION 3: Last Order Processing
+    // ---------------------------------------------
+    // Attempt to get customer's last order
     let lastOrder = null;
     if (customer.id) {
       lastOrder = await getLastOrderByCustomerIdFromDb(customer.id);
     }
 
+    // If no last order exists, create one from default template
     if (!lastOrder && DEFAULT_ORDER_ID) {
       console.log(
         `handleUserWorkflow: No last order for customer ${customer.id}. Creating from default.`
       );
+      // Get default order template
       const defaultOrder = await getDefaultOrderFromDb(DEFAULT_ORDER_ID);
       if (defaultOrder) {
+        // Create new last order from default template
         lastOrder = await createLastOrderInDb(
           customer.id,
           tenantIdForWorkflow,
@@ -187,6 +326,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
         if (!lastOrder)
           throw new Error("Failed to create last order from default.");
 
+        // Add default order items if available
         if (DEFAULT_ORDER_ID) {
           const defaultOrderItems = await getDefaultOrderItemsFromDb(
             DEFAULT_ORDER_ID
@@ -209,12 +349,13 @@ async function handleUserWorkflow(): Promise<Object | null> {
       `handleUserWorkflow: Last order processed. ID: ${lastOrder?.id}`
     );
 
-    // Instead of getting/creating a proposed order in DB, prepare the data for the agent
+    // SECTION 4: Proposed Order Preparation
+    // ---------------------------------------------
+    // Prepare order data for the agent based on last order
     console.log(
       `handleUserWorkflow: Preparing proposed order data from last order for customer ${customer.id}`
     );
-
-    let proposedOrderData: Partial<ProposedOrderInsertInput> | null = null;
+    let proposedOrderData: Partial<EnhancedProposedOrder> | null = null;
     const lastOrderWithItems = await getLastOrderWithItemsFromDb(customer.id);
 
     if (lastOrderWithItems && lastOrderWithItems.items.length > 0) {
@@ -222,7 +363,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
         `handleUserWorkflow: lastOrderWithItems found for customer ${customer.id}. Items count: ${lastOrderWithItems.items.length}`
       );
 
-      // Fetch product details for each item including size and description
+      // Enhance order items with product details
       const productDetailsPromises = lastOrderWithItems.items.map((item) =>
         item.product_id
           ? getProductDetailsById(item.product_id)
@@ -235,6 +376,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
         } product details out of ${lastOrderWithItems.items.length} items.`
       );
 
+      // Create enhanced order items with product details
       const orderItemsForAgent = lastOrderWithItems.items.map((item, index) => {
         const product = productDetailsList[index];
         return {
@@ -247,6 +389,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
         };
       });
 
+      // Prepare the proposed order data structure with enhanced customer information
       proposedOrderData = {
         customer_id: customer.id,
         tenant_id: tenantIdForWorkflow,
@@ -256,8 +399,12 @@ async function handleUserWorkflow(): Promise<Object | null> {
         updated_at: new Date().toISOString(),
         proposed_date: new Date().toISOString(),
         order_items: orderItemsForAgent,
-        // call_id will be set after voice agent interaction
         call_id: "pending",
+        // Additional customer information
+        customer_first_name: customer.first_name,
+        customer_last_name: customer.last_name,
+        customer_email: customer.email || undefined,
+        tenant_name: tenantForWorkflow?.name || "Acme Cleaning",
       };
 
       console.log(
@@ -270,6 +417,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
       );
     }
 
+    // Return complete workflow data
     return {
       user: userProfile,
       customer,
@@ -277,6 +425,7 @@ async function handleUserWorkflow(): Promise<Object | null> {
       proposedOrder: proposedOrderData, // Return the prepared data instead of DB record
     };
   } catch (e: any) {
+    // Handle and log any errors that occur during the workflow
     console.error(
       `handleUserWorkflow: Main Error: ${e.message}`,
       isAuthError(e) ? { s: e.status, c: e.code } : e
@@ -285,6 +434,9 @@ async function handleUserWorkflow(): Promise<Object | null> {
   }
 }
 
+// =============================================================================
+// DEFAULT ORDER TEMPLATE SETUP
+// =============================================================================
 async function setupDefaultOrderTemplate(
   tenantId: string,
   items: Array<{
@@ -343,8 +495,15 @@ async function setupDefaultOrderTemplate(
   }
 }
 
+// =============================================================================
+// MAIN EXECUTION ENTRY POINT
+// =============================================================================
 async function main() {
   console.log("main: Starting reorderbot_test.ts workflow...");
+
+  // Get the tenant information for this workflow
+  tenantForWorkflow = await getTenantFromDomain();
+  tenantIdForWorkflow = tenantForWorkflow.id;
 
   // Initialize default order template
   await initializeDefaultOrder();

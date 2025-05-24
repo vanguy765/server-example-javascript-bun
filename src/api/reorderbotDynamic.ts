@@ -23,6 +23,12 @@ app.post("/", async (c) => {
     customerNumber: ${customerNumber}`
   );
 
+async function getTenantFromDomain():
+
+async function initializeDefaultOrder()
+
+
+
   // Get all tenants from the database
   const { getAllTenants } = await import("../supabase"); // Assuming this function is designed to return tenant data
 

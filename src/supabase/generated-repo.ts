@@ -18,11 +18,26 @@ export function createRepository<T extends keyof Database['public']['Tables']>(
     },
     getById: async (id: string) => {
       const { data, error } = await supabaseClient
-        .from(tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      .from(tableName)
+      .select('*')
+      .eq('id', id)
+      .single();
       
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    getByColumn: async (column: string, value: any) => {
+      // Check column exists in table definition
+      // @ts-ignore
+      const columns = (supabaseClient as any).schema?.public?.Tables?.[tableName]?.columns;
+      if (columns && !columns[column]) {
+      throw new Error(`Column "${column}" does not exist on table "${tableName}"`);
+      }
+      const { data, error } = await supabaseClient
+      .from(tableName)
+      .select('*')
+      .eq(column, value)
+      .single();
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
