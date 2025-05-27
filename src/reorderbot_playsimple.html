@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Dynamic Query Examples</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #3ECF8E;
+            text-align: center;
+        }
+        .connection-form {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3ECF8E;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px 0;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2EBF7E;
+        }
+        .example {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow: auto;
+            font-size: 14px;
+        }        .code {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        
+        .code-editor {
+            width: 100%;
+            min-height: 150px;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            display: none;
+        }
+        
+        .edit-controls {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .result {
+            margin-top: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<!-- 
+This page features:
+
+Connection section at the top to connect to your Supabase instance
+Dynamic Query Function displayed for reference
+Five example sections, each showing:
+The static code example
+A button to run the example
+A results area that will display the data returned from Supabase
+For Examples 4 and 5, I've added input fields so you can customize the query parameters:
+
+Example 4: Lets you enter a specific order ID to query
+Example 5: Lets you select a start date for the date filter
+To use this page:
+
+Save it as an HTML file
+Open it in a browser
+Enter your Supabase credentials and connect
+Run the examples by clicking their respective buttons
+The page is clean and straightforward, focusing on displaying the example queries as static text while allowing you to execute them against your actual database. -->
+
+    <h1>Supabase Dynamic Query Examples</h1>
+    
+    <div class="connection-form">
+        <div class="form-group">
+            <label for="supabase-url">Supabase URL:</label>
+            <input type="text" id="supabase-url" value="http://127.0.0.1:54321">
+        </div>
+        <div class="form-group">
+            <label for="supabase-key">Supabase Anon Key:</label>
+            <input type="text" id="supabase-key" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0">
+        </div>
+        <button id="connect-btn">Connect to Supabase</button>
+        <div id="connection-status"></div>
+    </div>
+
+
+<!-- Add this near your connection form -->
+<button id="insert-test-data">Insert Test Data</button>
+
+<!-- Add this to your script section -->
+<script>
+document.getElementById('insert-test-data').addEventListener('click', async function() {
+    if (!supabase) {
+        alert('Please connect to Supabase first.');
+        return;
+    }
+    
+    try {
+        // Insert a test order
+        const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .insert([
+                { 
+                    status: 'pending',
+                    order_date: new Date().toISOString(),
+                    total_amount: 99.99,
+                    customer_id: null,
+                    notes: 'Test order',
+                    tenant_id: '00000000-0000-0000-0000-000000000000' // Use a valid tenant_id from your DB
+                }
+            ])
+            .select();
+            
+        if (orderError) throw orderError;
+        
+        if (order && order.length > 0) {
+            // Insert order items for this order
+            const { data: items, error: itemsError } = await supabase
+                .from('order_items')
+                .insert([
+                    {
+                        order_id: order[0].id,
+                        product_id: null,
+                        quantity: 2,
+                        price: 49.99,
+                        tenant_id: '00000000-0000-0000-0000-000000000000' // Use a valid tenant_id
+                    }
+                ]);
+                
+            if (itemsError) throw itemsError;
+            
+            alert('Test data inserted successfully!');
+        }
+    } catch (error) {
+        alert(`Error inserting test data: ${error.message}`);
+    }
+});
+</script>
+
+    <div class="function-container">
+        <h2>Dynamic Query Function</h2>
+        <div class="code">// Fully dynamic query builder with relationship support
+// Fully dynamic query builder with relationship support and single result option
+const buildDynamicQuery = async (
+  tableName, 
+  options = {
+    columns: ['*'], // Default to all columns if not specified
+    filters: [], // Optional filters
+    relationships: [], // Optional relationships to fetch related data
+    jsonKey: null, // Custom JSON key for the table in results
+    sorting: [], // Optional sorting parameters [{column: 'col_name', direction: 'asc|desc'}]
+    limit: null, // Optional limit for result count
+    single: false // Set to true to ensure only one result is returned
+  }
+) => {
+  // Process columns array for the main table
+  const columnsString = options.columns.join(', ')
+  
+  // Build relationship selection string if provided
+  let selectString = columnsString
+  
+  if (options.relationships && options.relationships.length > 0) {
+    // Create relationship string in format: main_cols, related_table(cols)
+    const relationshipStrings = options.relationships.map(rel => {
+      if (typeof rel === 'string') {
+        // If just table name is provided, select all columns
+        return `${rel}(*)`
+      } else {
+        // If object with table and columns is provided
+        const { table, columns = ['*'], jsonKey } = rel
+        if (jsonKey) {
+          // Use a custom JSON key for this relationship
+          return `${jsonKey}:${table}(${columns.join(', ')})`
+        } else {
+          return `${table}(${columns.join(', ')})`
+        }
+      }
+    })
+    
+    // Add relationships to the select string
+    selectString = [columnsString, ...relationshipStrings].join(', ')
+  }
+  
+  // Apply custom table JSON key if specified
+  let finalSelectString = options.jsonKey ? `${options.jsonKey}:${selectString}` : selectString
+  
+  // Start building the query with dynamic columns and relationships
+  let query = supabase
+    .from(tableName)
+    .select(finalSelectString)
+  
+  // Apply filters dynamically
+  if (options.filters && options.filters.length > 0) {
+    options.filters.forEach(filter => {
+      const { column, operator, value } = filter
+      
+      // Dynamically apply each filter
+      if (query[operator]) {
+        query = query[operator](column, value)
+      }
+    })
+  }
+  
+  // Apply sorting if specified
+  if (options.sorting && options.sorting.length > 0) {
+    options.sorting.forEach(sort => {
+      const { column, direction = 'asc' } = sort
+      // Add ordering to the query
+      query = query.order(column, { ascending: direction.toLowerCase() === 'asc' })
+    })
+  }
+  
+  // Apply limit if specified
+  if (options.limit && !options.single) {
+    query = query.limit(options.limit)
+  } else if (options.single) {
+    // If we specifically want just one result, limit to 1
+    query = query.limit(1)
+  }
+  
+  // Execute the query
+  const response = await query
+  
+  // If single is true, return just the first result or null
+  if (options.single && response.data) {
+    if (response.data.length === 0) {
+      return { data: null, error: response.error || { message: "No records found" } }
+    } else {
+      return { data: response.data[0], error: response.error }
+    }
+  }
+  
+  return response
+}
+}</div>
+    </div>    <!-- Example 1 -->
+    <div class="example">
+        <h2>Example 1: Get orders with all columns from order_items</h2>
+        <div class="code" id="code-display-1">// Get orders with all columns from order_items
+const ordersWithItems = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status', 'total_amount', 'customer_id'],
+  filters: [
+    { column: 'status', operator: 'eq', value: 'pending' }
+  ],
+  relationships: [
+    'order_items'  // Get all columns from related order_items
+  ]
+})</div>
+        <textarea class="code-editor" id="code-editor-1">// Get orders with all columns from order_items
+const ordersWithItems = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status', 'total_amount', 'customer_id'],
+  filters: [
+    { column: 'status', operator: 'eq', value: 'pending' }
+  ],
+  relationships: [
+    'order_items'  // Get all columns from related order_items
+  ]
+})</textarea>
+        <div class="edit-controls">
+            <button class="edit-btn" data-example="1">Edit Query</button>
+            <button class="apply-btn" data-example="1" style="display:none">Apply Changes</button>
+        </div>
+        <button class="run-btn" data-example="1">Run Example 1</button>
+        <div id="result-1" class="result">
+            <div>Results will appear here...</div>
+        </div>
+    </div>    <!-- Example 2 -->
+    <div class="example">
+        <h2>Example 2: Get orders with specific columns from order_items</h2>
+        <div class="code" id="code-display-2">// Get orders with specific columns from order_items
+const ordersWithSpecificItemDetails = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'total_amount'],
+  filters: [
+    { column: 'status', operator: 'eq', value: 'processing' }
+  ],
+  relationships: [
+    { table: 'order_items', columns: ['product_id', 'quantity', 'price'] }
+  ]
+})</div>
+        <textarea class="code-editor" id="code-editor-2">// Get orders with specific columns from order_items
+const ordersWithSpecificItemDetails = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'total_amount'],
+  filters: [
+    { column: 'status', operator: 'eq', value: 'processing' }
+  ],
+  relationships: [
+    { table: 'order_items', columns: ['product_id', 'quantity', 'price'] }
+  ]
+})</textarea>
+        <div class="edit-controls">
+            <button class="edit-btn" data-example="2">Edit Query</button>
+            <button class="apply-btn" data-example="2" style="display:none">Apply Changes</button>
+        </div>
+        <button class="run-btn" data-example="2">Run Example 2</button>
+        <div id="result-2" class="result">
+            <div>Results will appear here...</div>
+        </div>
+    </div>    <!-- Example 3 -->
+    <div class="example">
+        <h2>Example 3: Get orders with nested relationships</h2>        <div class="code" id="code-display-3">// Get orders with nested relationships (order_items and their products)
+const ordersWithItemsAndProducts = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status'],
+  relationships: [
+    { 
+      table: 'order_items', 
+      columns: ['id', 'quantity', 'price', 'product_id'],
+      jsonKey: 'lineItems'
+    },
+    { table: 'customers', columns: ['first_name', 'last_name', 'email'], jsonKey: 'buyer' },
+    { table: 'tenants', columns: ['name', 'domain'], jsonKey: 'organization' }
+  ],
+  jsonKey: 'purchaseOrder'
+})</div><textarea class="code-editor" id="code-editor-3">// Get orders with nested relationships (order_items and their products)
+const ordersWithItemsAndProducts = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status'],
+  relationships: [
+    { 
+      table: 'order_items', 
+      columns: ['id', 'quantity', 'price', 'product_id'],
+      jsonKey: 'lineItems'
+    },
+    { table: 'customers', columns: ['first_name', 'last_name', 'email'], jsonKey: 'buyer' },
+    { table: 'tenants', columns: ['name', 'domain'], jsonKey: 'organization' }
+  ],
+  jsonKey: 'purchaseOrder'
+})</textarea>
+        <div class="edit-controls">
+            <button class="edit-btn" data-example="3">Edit Query</button>
+            <button class="apply-btn" data-example="3" style="display:none">Apply Changes</button>
+        </div>
+        <button class="run-btn" data-example="3">Run Example 3</button>
+        <div id="result-3" class="result">
+            <div>Results will appear here...</div>
+        </div>
+    </div>    <!-- Example 4 -->
+    <div class="example">
+        <h2>Example 4: Get a single order with all its items</h2>
+        <div class="code" id="code-display-4">// Get a single order with all its items
+const singleOrderWithItems = await buildDynamicQuery('orders', {
+  columns: ['*'],
+  filters: [
+    // You may need to update this ID to match data in your DB
+    { column: 'id', operator: 'eq', value: '00000000-0000-0000-0000-000000000000' }
+  ],
+  relationships: ['order_items']
+})</div>
+        <textarea class="code-editor" id="code-editor-4">// Get a single order with all its items
+const singleOrderWithItems = await buildDynamicQuery('orders', {
+  columns: ['*'],
+  filters: [
+    // You may need to update this ID to match data in your DB
+    { column: 'id', operator: 'eq', value: '00000000-0000-0000-0000-000000000000' }
+  ],
+  relationships: ['order_items']
+})</textarea>
+        <div class="edit-controls">
+            <button class="edit-btn" data-example="4">Edit Query</button>
+            <button class="apply-btn" data-example="4" style="display:none">Apply Changes</button>
+        </div>
+        <div class="form-group">
+            <label for="order-id">Order ID to query:</label>
+            <input type="text" id="order-id" placeholder="Enter an order ID from your database">
+        </div>
+        <button class="run-btn" data-example="4">Run Example 4</button>
+        <div id="result-4" class="result">
+            <div>Results will appear here...</div>
+        </div>
+    </div>    <!-- Example 5 -->
+    <div class="example">
+        <h2>Example 5: Complex query with multiple filters and relationships</h2>
+        <div class="code" id="code-display-5">// Complex query with multiple filters and relationships
+const complexOrderQuery = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status', 'total_amount'],
+  filters: [
+    { column: 'order_date', operator: 'gte', value: '2023-01-01' },
+    { column: 'status', operator: 'in', value: ['pending', 'processing'] }
+  ],
+  relationships: [
+    { table: 'order_items', columns: ['product_id', 'quantity', 'price'] },
+    { table: 'customers', columns: ['first_name', 'last_name', 'company'] }
+  ]
+})</div>
+        <textarea class="code-editor" id="code-editor-5">// Complex query with multiple filters and relationships
+const complexOrderQuery = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status', 'total_amount'],
+  filters: [
+    { column: 'order_date', operator: 'gte', value: '2023-01-01' },
+    { column: 'status', operator: 'in', value: ['pending', 'processing'] }
+  ],
+  relationships: [
+    { table: 'order_items', columns: ['product_id', 'quantity', 'price'] },
+    { table: 'customers', columns: ['first_name', 'last_name', 'company'] }
+  ]
+})</textarea>
+        <div class="edit-controls">
+            <button class="edit-btn" data-example="5">Edit Query</button>
+            <button class="apply-btn" data-example="5" style="display:none">Apply Changes</button>
+        </div>
+        <div class="form-group">
+            <label for="start-date">Start Date:</label>
+            <input type="date" id="start-date" value="2023-01-01">
+        </div>
+        <button class="run-btn" data-example="5">Run Example 5</button>
+        <div id="result-5" class="result">
+            <div>Results will appear here...</div>
+        </div>
+    </div>
+
+    <!-- Example 6 -->
+<div class="example">
+    <h2>Example 6: Simple query - all orders</h2>
+    <div class="code" id="code-display-6">// Get all orders without filters
+const allOrders = await buildDynamicQuery('orders', {
+  columns: ['*'],
+  filters: [] // No filters
+})</div>
+    <textarea class="code-editor" id="code-editor-6">// Get all orders without filters
+const allOrders = await buildDynamicQuery('orders', {
+  columns: ['*'],
+  filters: [] // No filters
+})</textarea>
+    <div class="edit-controls">
+        <button class="edit-btn" data-example="6">Edit Query</button>
+        <button class="apply-btn" data-example="6" style="display:none">Apply Changes</button>
+    </div>
+    <button class="run-btn" data-example="6">Run Example 6</button>
+    <div id="result-6" class="result">
+        <div>Results will appear here...</div>
+    </div>
+</div>
+
+<!-- Example 7 -->
+<div class="example">
+    <h2>Example 7: Custom JSON keys for tables</h2>
+    <div class="code" id="code-display-7">// Get orders with custom JSON keys
+const customKeyQuery = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status'],
+  jsonKey: 'orderData', // Custom key for main table
+  relationships: [
+    { 
+      table: 'order_items', 
+      columns: ['id', 'quantity', 'price'],
+      jsonKey: 'lineItems' // Custom key for relationship table
+    },
+    { 
+      table: 'customers', 
+      columns: ['first_name', 'last_name', 'email'],
+      jsonKey: 'customerInfo' // Custom key for relationship table
+    }
+  ]
+})</div>
+    <textarea class="code-editor" id="code-editor-7">// Get orders with custom JSON keys
+const customKeyQuery = await buildDynamicQuery('orders', {
+  columns: ['id', 'order_date', 'status'],
+  jsonKey: 'orderData', // Custom key for main table
+  relationships: [
+    { 
+      table: 'order_items', 
+      columns: ['id', 'quantity', 'price'],
+      jsonKey: 'lineItems' // Custom key for relationship table
+    },
+    { 
+      table: 'customers', 
+      columns: ['first_name', 'last_name', 'email'],
+      jsonKey: 'customerInfo' // Custom key for relationship table
+    }
+  ]
+})</textarea>
+    <div class="edit-controls">
+        <button class="edit-btn" data-example="7">Edit Query</button>
+        <button class="apply-btn" data-example="7" style="display:none">Apply Changes</button>
+    </div>
+    <button class="run-btn" data-example="7">Run Example 7</button>    <div id="result-7" class="result">
+        <div>Results will appear here...</div>
+    </div>
+</div>
+
+<!-- Example 8 -->
+<div class="example">
+    <h2>Example 8: Get Favorite Products from Customer Preferences</h2>
+    <div class="code" id="code-display-8">// Get all product details for products in customer_preferences.favorites
+const favoriteProducts = await buildDynamicQuery('customer_preferences', {
+  columns: ['id', 'customer_id', 'favorites'],
+  filters: [
+    { column: 'favorites', operator: 'not.is', value: null }
+  ],
+  relationships: [
+    { 
+      table: 'products', 
+      columns: ['id', 'name', 'description', 'price', 'sku', 'inventory_count', 'image_url'],
+      jsonKey: 'favoriteProducts'
+    },
+    { 
+      table: 'customers', 
+      columns: ['first_name', 'last_name', 'email'],
+      jsonKey: 'customer'
+    }
+  ],
+  jsonKey: 'preferences'
+})</div>
+    <textarea class="code-editor" id="code-editor-8">// Get all product details for products in customer_preferences.favorites
+const favoriteProducts = await buildDynamicQuery('customer_preferences', {
+  columns: ['id', 'customer_id', 'favorites'],
+  filters: [
+    { column: 'favorites', operator: 'not.is', value: null }
+  ],
+  relationships: [
+    { 
+      table: 'products', 
+      columns: ['id', 'name', 'description', 'price', 'sku', 'inventory_count', 'image_url'],
+      jsonKey: 'favoriteProducts'
+    },
+    { 
+      table: 'customers', 
+      columns: ['first_name', 'last_name', 'email'],
+      jsonKey: 'customer'
+    }
+  ],
+  jsonKey: 'preferences'
+})</textarea>
+    <div class="edit-controls">
+        <button class="edit-btn" data-example="8">Edit Query</button>
+        <button class="apply-btn" data-example="8" style="display:none">Apply Changes</button>
+    </div>
+    <div class="form-group">
+        <label for="customer-id">Customer ID (optional):</label>
+        <input type="text" id="customer-id" placeholder="Enter a customer ID to filter by specific customer">
+    </div>
+    <button class="run-btn" data-example="8">Run Example 8</button>
+    <div id="result-8" class="result">
+        <div>Results will appear here...</div>
+    </div>
+</div>
+
+<!-- Example 9 -->
+<div class="example">
+    <h2>Example 9: Get Valid Product Specials</h2>
+    <div class="code" id="code-display-9">// Get all valid products from product_specials with complete details
+const validProductSpecials = await buildDynamicQuery('product_specials', {
+  columns: ['*'],
+  filters: [
+    { column: 'is_valid', operator: 'eq', value: true },
+    { column: 'expiry_date', operator: 'gte', value: new Date().toISOString() }
+  ],
+  relationships: [
+    { table: 'products', columns: ['name', 'description', 'price', 'sku', 'inventory_count'] }
+  ],
+  sorting: [
+    { column: 'discount_percentage', direction: 'desc' }
+  ]
+})</div>
+    <textarea class="code-editor" id="code-editor-9">// Get all valid products from product_specials with complete details
+const validProductSpecials = await buildDynamicQuery('product_specials', {
+  columns: ['*'],
+  filters: [
+    { column: 'is_valid', operator: 'eq', value: true },
+    { column: 'expiry_date', operator: 'gte', value: new Date().toISOString() }
+  ],
+  relationships: [
+    { table: 'products', columns: ['name', 'description', 'price', 'sku', 'inventory_count'] }
+  ],
+  sorting: [
+    { column: 'discount_percentage', direction: 'desc' }
+  ]
+})</textarea>
+    <div class="edit-controls">
+        <button class="edit-btn" data-example="9">Edit Query</button>
+        <button class="apply-btn" data-example="9" style="display:none">Apply Changes</button>
+    </div>
+    <button class="run-btn" data-example="9">Run Example 9</button>
+    <div id="result-9" class="result">
+        <div>Results will appear here...</div>
+    </div>
+</div>
+
+    <script>
+        // Global variable to store Supabase client
+        let supabase = null;        // Example configurations
+        const examples = {
+            1: {
+                tableName: 'orders',
+                options: {
+                    columns: ['id', 'order_date', 'status', 'total_amount', 'customer_id'],
+                    filters: [
+                        { column: 'status', operator: 'eq', value: 'pending' }
+                    ],
+                    relationships: [
+                        'order_items'
+                    ]
+                }
+            },
+            2: {
+                tableName: 'orders',
+                options: {
+                    columns: ['id', 'order_date', 'total_amount'],
+                    filters: [
+                        { column: 'status', operator: 'eq', value: 'processing' }
+                    ],
+                    relationships: [
+                        { table: 'order_items', columns: ['product_id', 'quantity', 'price'] }
+                    ]
+                }
+            },            3: {
+                tableName: 'orders',
+                options: {
+                    columns: ['id', 'order_date', 'status'],
+                    relationships: [
+                        { table: 'order_items', columns: ['id', 'quantity', 'price', 'product_id'], jsonKey: 'lineItems' },
+                        { table: 'customers', columns: ['first_name', 'last_name', 'email'], jsonKey: 'buyer' },
+                        { table: 'tenants', columns: ['name', 'domain'], jsonKey: 'organization' }
+                    ],
+                    jsonKey: 'purchaseOrder'
+                }
+            },
+            4: {
+                tableName: 'orders',
+                options: {
+                    columns: ['*'],
+                    filters: [
+                        { column: 'id', operator: 'eq', value: '' } // Will be updated with user input
+                    ],
+                    relationships: ['order_items']
+                }
+            },
+            5: {
+                tableName: 'orders',
+                options: {
+                    columns: ['id', 'order_date', 'status', 'total_amount'],
+                    filters: [
+                        { column: 'order_date', operator: 'gte', value: '2023-01-01' }, // Will be updated with user input
+                        { column: 'status', operator: 'in', value: ['pending', 'processing'] }
+                    ],
+                    relationships: [
+                        { table: 'order_items', columns: ['product_id', 'quantity', 'price'] },
+                        { table: 'customers', columns: ['first_name', 'last_name', 'company'] }
+                    ]
+                }
+            },
+            // Simple query example
+            6: {
+                tableName: 'orders',
+                options: {
+                    columns: ['*'],
+                    filters: []
+                }
+            },            // Example with custom JSON keys
+            7: {
+                tableName: 'orders',
+                options: {
+                    columns: ['id', 'order_date', 'status'],
+                    jsonKey: 'orderData', // Custom key for main table
+                    relationships: [
+                        { 
+                            table: 'order_items', 
+                            columns: ['id', 'quantity', 'price'],
+                            jsonKey: 'lineItems' // Custom key for relationship table
+                        },
+                        { 
+                            table: 'customers', 
+                            columns: ['first_name', 'last_name', 'email'],
+                            jsonKey: 'customerInfo' // Custom key for relationship table
+                        }
+                    ]
+                }
+            },            // Favorite products from customer preferences
+            8: {
+                tableName: 'customer_preferences',
+                options: {
+                    columns: ['id', 'customer_id', 'favorites'],
+                    filters: [
+                        { column: 'favorites', operator: 'not.is', value: null }
+                    ],
+                    relationships: [
+                        { 
+                            table: 'products', 
+                            columns: ['id', 'name', 'description', 'price', 'sku', 'inventory_count', 'image_url'],
+                            jsonKey: 'favoriteProducts'
+                        },
+                        { 
+                            table: 'customers', 
+                            columns: ['first_name', 'last_name', 'email'],
+                            jsonKey: 'customer'
+                        }
+                    ],
+                    jsonKey: 'preferences'
+                }
+            },
+            // Product Specials example
+            9: {
+                tableName: 'product_specials',
+                options: {
+                    columns: ['*'],
+                    filters: [
+                        { column: 'is_valid', operator: 'eq', value: true },
+                        { column: 'expiry_date', operator: 'gte', value: new Date().toISOString() }
+                    ],
+                    relationships: [
+                        { table: 'products', columns: ['name', 'description', 'price', 'sku', 'inventory_count'] }
+                    ],
+                    sorting: [
+                        { column: 'discount_percentage', direction: 'desc' }
+                    ]
+                }
+            }
+        };// Dynamic query builder function
+        const buildDynamicQuery = async (tableName, options = { 
+            columns: ['*'], 
+            filters: [], 
+            relationships: [],
+            jsonKey: null // Custom JSON key for the table in results 
+        }) => {
+            const columnsString = options.columns.join(', ');
+            let selectString = columnsString;
+            
+            if (options.relationships && options.relationships.length > 0) {
+                const relationshipStrings = options.relationships.map(rel => {
+                    if (typeof rel === 'string') {
+                        // Simple string format - just the table name for all columns
+                        return `${rel}(*)`;
+                    } else {
+                        // Object format with table, columns, and optional jsonKey
+                        const { table, columns = ['*'], jsonKey } = rel;
+                        if (jsonKey) {
+                            // Use a custom JSON key for this relationship
+                            return `${jsonKey}:${table}(${columns.join(', ')})`;
+                        } else {
+                            return `${table}(${columns.join(', ')})`;
+                        }
+                    }
+                });
+                
+                selectString = [columnsString, ...relationshipStrings].join(', ');
+            }
+            
+            let query = supabase.from(tableName).select(selectString);
+            
+            // Apply custom table JSON key if specified
+            if (options.jsonKey) {
+                // This modifies how the table data appears in the response
+                query = query.select(options.jsonKey + ':' + selectString);
+            }
+            
+            if (options.filters && options.filters.length > 0) {
+                options.filters.forEach(filter => {
+                    const { column, operator, value } = filter;
+                    if (query[operator]) {
+                        query = query[operator](column, value);
+                    }
+                });
+            }
+            
+            return await query;
+        };
+
+        // Handle Supabase connection
+        document.getElementById('connect-btn').addEventListener('click', function() {
+            const url = document.getElementById('supabase-url').value;
+            const key = document.getElementById('supabase-key').value;
+            
+            if (!url || !key) {
+                document.getElementById('connection-status').innerHTML = 
+                    '<div class="error">Please provide both URL and anonymous key.</div>';
+                return;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(url, key);
+                document.getElementById('connection-status').innerHTML = 
+                    '<div style="color: green; margin-top: 10px;">✓ Connected successfully!</div>';
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = 
+                    `<div class="error">Connection error: ${error.message}</div>`;
+            }
+        });        // Handle edit button clicks
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const exampleId = this.getAttribute('data-example');
+                const codeDisplay = document.getElementById(`code-display-${exampleId}`);
+                const codeEditor = document.getElementById(`code-editor-${exampleId}`);
+                const applyBtn = document.querySelector(`.apply-btn[data-example="${exampleId}"]`);
+                
+                // Hide the display and show the editor
+                codeDisplay.style.display = 'none';
+                codeEditor.style.display = 'block';
+                this.style.display = 'none';
+                applyBtn.style.display = 'inline-block';
+            });
+        });
+        
+        // Handle apply changes button clicks
+        document.querySelectorAll('.apply-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const exampleId = this.getAttribute('data-example');
+                const codeDisplay = document.getElementById(`code-display-${exampleId}`);
+                const codeEditor = document.getElementById(`code-editor-${exampleId}`);
+                const editBtn = document.querySelector(`.edit-btn[data-example="${exampleId}"]`);
+                
+                // Update the displayed code
+                codeDisplay.textContent = codeEditor.value;
+                
+                // Parse the edited code to update the examples object
+                try {
+                    // Extract the configuration object from the edited code
+                    const codeText = codeEditor.value;
+                    
+                    // Extract everything inside buildDynamicQuery(...) using regex
+                    const match = codeText.match(/buildDynamicQuery\s*\(\s*['"]([^'"]+)['"]\s*,\s*(\{[\s\S]*?\})\s*\)/);
+                    
+                    if (match) {
+                        const tableName = match[1];
+                        const optionsText = match[2];
+                        
+                        // Parse the options object
+                        const optionsObj = eval(`(${optionsText})`);
+                        
+                        // Update the examples object
+                        examples[exampleId] = {
+                            tableName: tableName,
+                            options: optionsObj
+                        };
+                        
+                        // Show success message
+                        alert('Query updated successfully!');
+                    } else {
+                        throw new Error('Could not parse the query configuration');
+                    }
+                } catch (error) {
+                    alert(`Error updating query: ${error.message}`);
+                    // Revert to original code
+                    codeEditor.value = codeDisplay.textContent;
+                }
+                
+                // Hide the editor and show the display
+                codeDisplay.style.display = 'block';
+                codeEditor.style.display = 'none';
+                this.style.display = 'none';
+                editBtn.style.display = 'inline-block';
+            });
+        });
+
+        // Handle run button clicks
+        document.querySelectorAll('.run-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                if (!supabase) {
+                    alert('Please connect to Supabase first.');
+                    return;
+                }
+                
+                const exampleId = this.getAttribute('data-example');
+                const resultElement = document.getElementById(`result-${exampleId}`);
+                
+                try {
+                    // Clone the example configuration to avoid modifying the original
+                    const config = JSON.parse(JSON.stringify(examples[exampleId]));
+                    
+                    // Special handling for example 4 (single order)
+                    if (exampleId === '4') {
+                        const orderId = document.getElementById('order-id').value;
+                        if (!orderId) {
+                            resultElement.innerHTML = '<div class="error">Please enter an order ID.</div>';
+                            return;
+                        }
+                        config.options.filters[0].value = orderId;
+                    }
+                      // Special handling for example 5 (date filter)
+                    if (exampleId === '5') {
+                        const startDate = document.getElementById('start-date').value;
+                        config.options.filters[0].value = startDate;
+                    }
+                    
+                    // Special handling for example 8 (customer filter)
+                    if (exampleId === '8') {
+                        const customerId = document.getElementById('customer-id').value;
+                        if (customerId) {
+                            // Add customer ID filter if provided
+                            config.options.filters.push({
+                                column: 'customer_id',
+                                operator: 'eq',
+                                value: customerId
+                            });
+                        }
+                    }
+                    
+                    // Execute the query
+                    const result = await buildDynamicQuery(config.tableName, config.options);
+                    
+                    // Format the result for display
+                    if (result.error) {
+                        resultElement.innerHTML = `<div class="error">Error: ${result.error.message}</div>`;
+                    } else {
+                        resultElement.innerHTML = `
+                            <div>
+                                <strong>Status:</strong> ${result.status}<br>
+                                <strong>Count:</strong> ${result.data ? result.data.length : 0}
+                            </div>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        `;
+                    }
+                } catch (error) {
+                    resultElement.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -25,6 +25,16 @@ app.get("/reorderbot", async (c) => {
   return c.html(html);
 });
 
+app.get("/reorderbot_playsimple", async (c) => {
+  const html = await Bun.file("./src/reorderbot_playsimple.html").text();
+  return c.html(html);
+});
+
+app.get("/reorderbot_playground", async (c) => {
+  const html = await Bun.file("./src/reorderbot_playground.html").text();
+  return c.html(html);
+});
+
 app.route("/api/inbound", inboundRoute);
 app.route("/api/outbound", outboundRoute);
 app.route("/api/reorderbot", reorderbotRoute);

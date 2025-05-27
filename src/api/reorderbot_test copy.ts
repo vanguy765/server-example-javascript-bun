@@ -16,6 +16,36 @@ async function getTenantByDomain(domainToFind: string): Promise<Tenant | null> {
   const tenantsRepo = createRepository("tenants");
 
   try {
+    // Get orders with nested relationships (order_items and their products)
+    const ordersWithItemsAndProducts = await buildDynamicQuery("orders", {
+      columns: ["id", "order_date", "status"],
+      relationships: [
+        {
+          table: "order_items",
+          columns: [
+            "id",
+            "quantity",
+            "price",
+            "product:product_id(id, name, description, size)", // Use foreign key reference
+          ],
+          jsonKey: "lineItems",
+        },
+        {
+          table: "customers",
+          columns: ["id", "first_name", "last_name", "phone"],
+          jsonKey: "customer",
+        },
+        {
+          table: "tenants",
+          columns: ["id", "name", "domain"],
+          jsonKey: "company",
+        },
+      ],
+      jsonKey: "proposed_order",
+    });
+
+    console.log(`Orders with items and products:`, ordersWithItemsAndProducts);
+
     // 3. Fetch all tenants.
     // Note: For very large tables, fetching all records and then filtering client-side
     // can be inefficient. If the underlying Supabase client used by the repository

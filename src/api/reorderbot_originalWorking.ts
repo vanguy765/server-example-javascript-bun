@@ -27,7 +27,7 @@ app.post("/", async (c) => {
     await c.req.json<any>(); // Using <any> if not validating body yet
 
   console.log(
-    `Received request to place outbound call with 
+    `reorderbot_originalWorking: Received request to place outbound call with 
     phoneNumberId: ${phoneNumberId}, 
     assistantId: ${assistantId}, 
     customerNumber: ${customerNumber}`
@@ -71,6 +71,7 @@ app.post("/", async (c) => {
       "Successfully retrieved tenants using dynamic repository:",
       tenants
     );
+    console.log();
 
     if (tenants && tenants.length > 0 && tenants[0]) {
       // Example: Accessing a property with type safety. 'name' would be checked by TypeScript.

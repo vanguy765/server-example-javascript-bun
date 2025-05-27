@@ -17,7 +17,7 @@ app.post("/", async (c) => {
   // Extract phoneNumberId, assistantId, and customerNumber from the request body
   const { phoneNumberId, assistantId, customerNumber } = await c.req.json();
   console.log(
-    `Received request to place outbound call with 
+    `reorderbotDynamic: Received request to place outbound call with 
     phoneNumberId: ${phoneNumberId}, 
     assistantId: ${assistantId}, 
     customerNumber: ${customerNumber}`

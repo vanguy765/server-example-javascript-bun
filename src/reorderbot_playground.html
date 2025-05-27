@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Dynamic Query Playground</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #3ECF8E;
+            text-align: center;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .editor-section, .result-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3ECF8E;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2EBF7E;
+        }
+        .connection-form {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .preset-examples {
+            margin-top: 20px;
+        }
+        .result {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            overflow: auto;
+            max-height: 500px;
+        }
+        .result pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<!--     
+This interactive playground allows you to:
+
+Connect to your Supabase instance by providing your project URL and anon key
+Select a table from your schema (pre-populated with your table names)
+Configure your query using a JSON editor for columns, filters, and relationships
+Edit the function implementation directly in the playground to experiment with changes
+Execute queries and see the generated SQL-like syntax and results
+Try preset examples that demonstrate different query patterns
+The playground also displays:
+
+The generated query syntax that will be sent to Supabase
+The actual result data or any errors that occur
+Preset examples that match your schema
+To use it:
+
+Save this HTML to a file
+Open it in a browser
+Enter your Supabase project URL and anonymous key
+Click "Connect to Supabase"
+Select a table, configure your query (or use a preset), and click "Execute Query"
+This playground demonstrates the full power of the dynamic query builder while letting you experiment with your actual Supabase data. -->
+
+    <h1>Supabase Dynamic Query Playground</h1>
+    
+    <div class="connection-form">
+        <div class="form-group">
+            <label for="supabase-url">Supabase URL:</label>
+            <input type="text" id="supabase-url" value="http://127.0.0.1:54321">
+        </div>
+        <div class="form-group">
+            <label for="supabase-key">Supabase Anon Key:</label>
+            <input type="text" id="supabase-key" 
+            <input type="text" id="supabase-key" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0">
+        </div>
+        <button id="connect-btn">Connect to Supabase</button>
+        <div id="connection-status"></div>
+    </div>
+    
+    <div class="container">
+        <div class="editor-section">
+            <h2>Query Builder</h2>
+            
+            <div class="editor-container">
+                <div class="form-group">
+                    <label for="table-select">Select Table:</label>
+                    <select id="table-select">
+                        <option value="orders">orders</option>
+                        <option value="customers">customers</option>
+                        <option value="products">products</option>
+                        <option value="order_items">order_items</option>
+                        <option value="call_logs">call_logs</option>
+                        <option value="tenants">tenants</option>
+                        <option value="agents">agents</option>
+                        <option value="api_keys">api_keys</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="query-builder">Query Configuration (JSON):</label>
+                    <textarea id="query-builder" spellcheck="false">{
+  "columns": ["id", "status", "total_amount", "order_date"],
+  "filters": [
+    { "column": "status", "operator": "eq", "value": "pending" }
+  ],
+  "relationships": [
+    { "table": "order_items", "columns": ["product_id", "quantity", "price"] },
+    { "table": "customers", "columns": ["first_name", "last_name", "email"] }
+  ]
+}</textarea>
+                </div>
+                
+                <button id="execute-btn">Execute Query</button>
+                
+                <div class="preset-examples">
+                    <h3>Preset Examples:</h3>
+                    <button class="preset-btn" data-preset="orders-with-items">Orders with All Items</button>
+                    <button class="preset-btn" data-preset="orders-with-specific-items">Orders with Specific Item Fields</button>
+                    <button class="preset-btn" data-preset="customers-with-orders">Customers with Orders</button>
+                    <button class="preset-btn" data-preset="products-filtered">Filtered Products</button>
+                    <button class="preset-btn" data-preset="agents-with-calls">Agents with Call Logs</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="result-section">
+            <h2>Function & Results</h2>
+            
+            <div class="function-display">
+                <h3>Dynamic Query Function:</h3>
+                <textarea id="function-code" spellcheck="false" style="min-height: 200px;">
+// Fully dynamic query builder with relationship support
+const buildDynamicQuery = async (
+  tableName, 
+  options = {
+    columns: ['*'], // Default to all columns if not specified
+    filters: [], // Optional filters
+    relationships: [] // Optional relationships to fetch related data
+  }
+) => {
+  // Process columns array for the main table
+  const columnsString = options.columns.join(', ')
+  
+  // Build relationship selection string if provided
+  let selectString = columnsString
+  
+  if (options.relationships && options.relationships.length > 0) {
+    // Create relationship string in format: main_cols, related_table(cols)
+    const relationshipStrings = options.relationships.map(rel => {
+      if (typeof rel === 'string') {
+        // If just table name is provided, select all columns
+        return `${rel}(*)`
+      } else {
+        // If object with table and columns is provided
+        const { table, columns = ['*'] } = rel
+        return `${table}(${columns.join(', ')})`
+      }
+    })
+    
+    // Add relationships to the select string
+    selectString = [columnsString, ...relationshipStrings].join(', ')
+  }
+  
+  // Start building the query with dynamic columns and relationships
+  let query = supabase
+    .from(tableName)
+    .select(selectString)
+  
+  // Apply filters dynamically
+  if (options.filters && options.filters.length > 0) {
+    options.filters.forEach(filter => {
+      const { column, operator, value } = filter
+      
+      // Dynamically apply each filter
+      if (query[operator]) {
+        query = query[operator](column, value)
+      }
+    })
+  }
+  
+  // Execute the query
+  return await query
+}</textarea>
+            </div>
+            
+            <div class="result-display">
+                <h3>Query Result:</h3>
+                <div id="generated-query" class="result">
+                    <pre>// Generated query will appear here</pre>
+                </div>
+                <h3>Data Result:</h3>
+                <div id="query-result" class="result">
+                    <pre>// Query results will appear here</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to store Supabase client
+        let supabase = null;
+
+        // Preset examples
+        const presets = {
+            'orders-with-items': {
+                table: 'orders',
+                config: {
+                    columns: ['id', 'order_date', 'status', 'total_amount'],
+                    filters: [
+                        { column: 'status', operator: 'eq', value: 'pending' }
+                    ],
+                    relationships: [
+                        'order_items' // Get all columns from related order_items
+                    ]
+                }
+            },
+            'orders-with-specific-items': {
+                table: 'orders',
+                config: {
+                    columns: ['id', 'order_date', 'total_amount'],
+                    filters: [
+                        { column: 'created_at', operator: 'gte', value: '2023-01-01' }
+                    ],
+                    relationships: [
+                        { table: 'order_items', columns: ['product_id', 'quantity', 'price'] }
+                    ]
+                }
+            },
+            'customers-with-orders': {
+                table: 'customers',
+                config: {
+                    columns: ['id', 'first_name', 'last_name', 'email', 'phone'],
+                    filters: [
+                        { column: 'is_active', operator: 'eq', value: true }
+                    ],
+                    relationships: [
+                        { table: 'orders', columns: ['id', 'order_date', 'status', 'total_amount'] }
+                    ]
+                }
+            },
+            'products-filtered': {
+                table: 'products',
+                config: {
+                    columns: ['id', 'name', 'price', 'description'],
+                    filters: [
+                        { column: 'price', operator: 'gte', value: 50 },
+                        { column: 'is_active', operator: 'eq', value: true }
+                    ],
+                    relationships: [
+                        { table: 'product_categories', columns: ['name'] }
+                    ]
+                }
+            },
+            'agents-with-calls': {
+                table: 'agents',
+                config: {
+                    columns: ['id', 'name', 'email', 'department'],
+                    relationships: [
+                        { table: 'call_logs', columns: ['call_date', 'duration', 'notes', 'outcome'] }
+                    ]
+                }
+            }
+        };
+
+        // Handle connection to Supabase
+        document.getElementById('connect-btn').addEventListener('click', function() {
+            const url = document.getElementById('supabase-url').value;
+            const key = document.getElementById('supabase-key').value;
+            
+            if (!url || !key) {
+                document.getElementById('connection-status').innerHTML = 
+                    '<div class="error">Please provide both URL and anonymous key.</div>';
+                return;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(url, key);
+                document.getElementById('connection-status').innerHTML = 
+                    '<div style="color: green; margin-top: 10px;">✓ Connected successfully!</div>';
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = 
+                    `<div class="error">Connection error: ${error.message}</div>`;
+            }
+        });
+
+        // Handle query execution
+        document.getElementById('execute-btn').addEventListener('click', async function() {
+            if (!supabase) {
+                document.getElementById('query-result').innerHTML = 
+                    '<div class="error">Please connect to Supabase first.</div>';
+                return;
+            }
+            
+            const tableName = document.getElementById('table-select').value;
+            let options;
+            
+            try {
+                options = JSON.parse(document.getElementById('query-builder').value);
+                
+                // Get the user-edited function
+                const functionCode = document.getElementById('function-code').value;
+                
+                // Create a function from the code string
+                const buildDynamicQueryFn = new Function('supabase', 'tableName', 'options', `
+                    return (${functionCode})(tableName, options);
+                `);
+                
+                // Show the generated query
+                let selectString = options.columns.join(', ');
+                if (options.relationships && options.relationships.length > 0) {
+                    const relationshipStrings = options.relationships.map(rel => {
+                        if (typeof rel === 'string') {
+                            return `${rel}(*)`;
+                        } else {
+                            const { table, columns = ['*'] } = rel;
+                            return `${table}(${columns.join(', ')})`;
+                        }
+                    });
+                    selectString = [selectString, ...relationshipStrings].join(', ');
+                }
+                
+                let queryPreview = `.from('${tableName}')\n.select('${selectString}')`;
+                
+                if (options.filters && options.filters.length > 0) {
+                    options.filters.forEach(filter => {
+                        queryPreview += `\n.${filter.operator}('${filter.column}', ${JSON.stringify(filter.value)})`;
+                    });
+                }
+                
+                document.getElementById('generated-query').innerHTML = 
+                    `<pre>supabase${queryPreview}</pre>`;
+                
+                // Execute the query using our dynamic function
+                const result = await buildDynamicQueryFn(supabase, tableName, options);
+                
+                // Display the results
+                document.getElementById('query-result').innerHTML = 
+                    `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                
+            } catch (error) {
+                document.getElementById('query-result').innerHTML = 
+                    `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+
+        // Load preset examples
+        document.querySelectorAll('.preset-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const presetName = this.getAttribute('data-preset');
+                const preset = presets[presetName];
+                
+                if (preset) {
+                    document.getElementById('table-select').value = preset.table;
+                    document.getElementById('query-builder').value = 
+                        JSON.stringify(preset.config, null, 2);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

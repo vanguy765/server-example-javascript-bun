@@ -1019,6 +1019,27 @@ export type Database = {
           },
         ]
       }
+      
+// Add the missing view/table definition
+"product_specials_view": {
+  Row: {
+    id: string;
+    product_id: string;
+    product_name: string;
+    product_description: string;
+    product_price: number;
+    product_size: string;
+    discount: number;
+    end_date: string;
+    tenant_id: string;
+  };
+  Insert: {
+    // If this is a view, Insert/Update may be empty or omitted
+  };
+  Update: {
+    // If this is a view, Insert/Update may be empty or omitted
+  };
+}
     }
     Views: {
       [_ in never]: never

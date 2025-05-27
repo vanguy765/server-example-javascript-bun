@@ -1,5 +1,10 @@
 I'll help you understand what each of these scripts does by examining their source files.
 
+================================================================================
+The docs are not entirely correct due to script errors that needed fixing.
+`gen:types` must be run before `gen:schema-types` as one feeds the other.
+================================================================================
+
 # See package.json for scripts
 
 Let me explain what each script does:
