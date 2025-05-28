@@ -12,19 +12,30 @@ import { transcriptHandler } from "./transcript";
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.post("/", async (c) => {
-  const conversationUuid = c.req.query("conversation_uuid");
+  // console.log("Webhook received: ", c.req.json());
 
-  if (conversationUuid) {
-    // Fetch some data from the database and use it in the handlers.
-    console.log("conversationUuid", conversationUuid);
-  }
+  // const conversationUuid = c.req.query("conversation_uuid");
 
+  // if (conversationUuid) {
+  //   // Fetch some data from the database and use it in the handlers.
+  //   console.log("conversationUuid", conversationUuid);
+  // }
+  const reqBody: any = await c.req.json();
+  const payload: VapiPayload = reqBody.message;
+  console.log("Webhook received: ", payload.type);
   try {
-    const reqBody: any = await c.req.json();
-    const payload: VapiPayload = reqBody.message;
+    // const reqBody: any = await c.req.json();
+    // const payload: VapiPayload = reqBody.message;
+
     switch (payload.type) {
       case VapiWebhookEnum.FUNCTION_CALL:
         console.log("func call");
+        return c.json(await functionCallHandler(payload), 201);
+      case VapiWebhookEnum.TOOL_CALLS:
+        console.log("tools call");
+
+        process.exit(1); // For debugging purposes, remove this in production
+
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.STATUS_UPDATE:
         return c.json(await statusUpdateHandler(payload), 201);

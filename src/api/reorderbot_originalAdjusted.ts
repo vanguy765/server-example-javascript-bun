@@ -6,7 +6,9 @@ import type { Database } from "../supabase/generated.types";
 import { tenantsRowSchema } from "../supabase/generated.schemas";
 import { createRepository } from "../supabase/generated-repo";
 import { supabaseClient } from "../supabase/client";
-import { promises as fs } from "fs";
+//import { promises as fs } from "fs";
+
+import * as fs from "fs";
 
 const path = require("path");
 
@@ -792,7 +794,7 @@ app.post("/", async (c) => {
     const templatePath = agentFilePath;
     agent.prompt = buildPromptFromFile(templatePath, agent);
     console.log("Prompt built successfully");
-    console.log("Agent prompt:", agent.prompt);
+    //console.log("Agent prompt:", agent.prompt);
   } catch (error) {
     console.error("Failed to build prompt:", error);
   }
@@ -803,50 +805,118 @@ app.post("/", async (c) => {
 
   // Merge everything
 
-  return c.json(proposedOrder, 200);
-  process.exitCode = 0;
+  // return c.json(proposedOrder, 200);
+  // process.exitCode = 0;
 
-  // try {
-  //   const response = await fetch(`${envConfig.vapi.baseUrl}/call/phone`, {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${envConfig.vapi.apiKey}`,
-  //     },
-  //     body: JSON.stringify({
-  //       phoneNumberId: phoneNumberId,
-  //       assistantId: assistantId,
-  //       customer: {
-  //         number: customerNumber,
-  //       },
-  //     }),
-  //   });
+  const assistant = {
+    transcriber: {
+      provider: "deepgram",
+      keywords: ["Bicky:1"],
+    },
+    model: {
+      provider: "openai",
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You're a sales agent for a Bicky Realty. You're calling a list of leads to schedule appointments to show them houses...",
+        },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "bookAppointment",
+            description: "Used to book the appointment.",
+            parameters: {
+              type: "object",
+              properties: {
+                datetime: {
+                  type: "string",
+                  description:
+                    "The date and time of the appointment in ISO format.",
+                },
+              },
+            },
+          },
+          async: true,
+        },
+        {
+          type: "transferCall",
+          destinations: [
+            {
+              type: "number",
+              number: "+16054440129",
+              message: "I am forwarding your call. Please stay on the line.",
+            },
+          ],
+        },
+      ],
+    },
+    voice: {
+      provider: "openai",
+      voiceId: "onyx",
+    },
+    voicemailMessage:
+      "Hi, this is Jennifer from Bicky Realty. We were just calling to let you know...",
+    firstMessage:
+      "Hi, this Jennifer from Bicky Realty. We're calling to schedule an appointment to show you a house. When would be a good time for you?",
+    endCallMessage: "Thanks for your time.",
+    endCallFunctionEnabled: true,
+    recordingEnabled: false,
+    server: { url: "https://0489-24-86-56-54.ngrok-free.app/api/webhook" },
+  };
+  console.log(
+    "================================================================"
+  );
+  console.log("assistant:", assistant);
+  try {
+    const response = await fetch(`${envConfig.vapi.baseUrl}/call/phone`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${envConfig.vapi.apiKey}`,
+      },
+      body: JSON.stringify({
+        phoneNumberId: phoneNumberId,
+        assistant: assistant,
+        customer: {
+          number: customerNumber,
+        },
+      }),
+    });
 
-  //   if (!response.ok) {
-  //     const errorBody = await response
-  //       .text()
-  //       .catch(() => "Could not read error body");
-  //     throw new Error(
-  //       `HTTP error! status: ${response.status}, body: ${errorBody}`
-  //     );
-  //   }
+    if (!response.ok) {
+      const errorBody = await response
+        .text()
+        .catch(() => "Could not read error body");
+      throw new Error(
+        `HTTP error! status: ${response.status}, body: ${errorBody}`
+      );
+    }
 
-  //   const data = await response.json();
-  //   return c.json(data, 200);
-  // } catch (error) {
-  //   console.error("VAPI call failed:", error);
-  //   const errorMessage =
-  //     error instanceof Error
-  //       ? error.message
-  //       : "An unknown error occurred during VAPI call";
-  //   return c.json(
-  //     {
-  //       message: "Failed to place outbound call",
-  //       error: errorMessage,
-  //     },
-  //     500
-  //   );
-  // }
+    const data = await response.json();
+    return c.json(data, 200);
+  } catch (error) {
+    console.error("VAPI call failed:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An unknown error occurred during VAPI call";
+    return c.json(
+      {
+        message: "Failed to place outbound call",
+        error: errorMessage,
+      },
+      500
+    );
+  }
 });
 
 export { app as reorderbotRoute };
+
+// {
+//   "message": "Failed to place outbound call",
+//   "error": "HTTP error! status: 400, body: {\"message\":[\"assistant.model.each value in tools.type must be one of the following values: dtmf, endCall, transferCall, output, voicemail, query, sms, function, mcp, apiRequest, bash, computer, textEditor, google.calendar.event.create, google.calendar.availability.check, google.sheets.row.append, slack.message.send, gohighlevel.calendar.event.create, gohighlevel.calendar.availability.check, gohighlevel.contact.create, gohighlevel.contact.get, make, ghl\"],\"error\":\"Bad Request\",\"statusCode\":400}"
+// }
