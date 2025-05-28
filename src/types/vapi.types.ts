@@ -93,7 +93,7 @@ export type VapiCallStatus = (typeof VAPI_CALL_STATUSES)[number];
 
 export enum VapiWebhookEnum {
   ASSISTANT_REQUEST = "assistant-request",
-  FUNCTION_CALL = "function-call",
+  FUNCTION_CALL = "tool-calls",
   TOOL_CALLS = "tool-calls",
   STATUS_UPDATE = "status-update",
   END_OF_CALL_REPORT = "end-of-call-report",
@@ -159,6 +159,18 @@ export interface TranscriptPayload {
 }
 
 export interface VapiCall {}
+export interface ToolCallsPayload extends BaseVapiPayload {
+  type: VapiWebhookEnum.TOOL_CALLS;
+  toolCalls: Array<{
+    id: string;
+    type: string;
+    function: {
+      name: string;
+      arguments: string; // JSON string of arguments
+    };
+  }>;
+}
+
 export type VapiPayload =
   | AssistantRequestPayload
   | StatusUpdatePayload
@@ -166,6 +178,7 @@ export type VapiPayload =
   | EndOfCallReportPayload
   | SpeechUpdatePayload
   | TranscriptPayload
+  | ToolCallsPayload
   | HangPayload;
 
 export type FunctionCallMessageResponse =
@@ -185,6 +198,8 @@ export interface TranscriptMessageResponse {}
 export interface HangMessageResponse {}
 export interface EndOfCallReportMessageResponse {}
 
+export interface ToolCallsMessageResponse {}
+
 export type VapiResponse =
   | AssistantRequestMessageResponse
   | FunctionCallMessageResponse
@@ -192,4 +207,5 @@ export type VapiResponse =
   | HangMessageResponse
   | StatusUpdateMessageResponse
   | SpeechUpdateMessageResponse
-  | TranscriptMessageResponse;
+  | TranscriptMessageResponse
+  | ToolCallsMessageResponse;

@@ -4,6 +4,7 @@ import { Bindings } from "../../types/hono.types";
 import { assistantRequestHandler } from "./assistantRequest";
 import { endOfCallReportHandler } from "./endOfCallReport";
 import { functionCallHandler } from "./functionCall";
+import { toolCallHandler } from "./toolCall";
 import { HangEventHandler } from "./hang";
 import { speechUpdateHandler } from "./speechUpdateHandler";
 import { statusUpdateHandler } from "./statusUpdate";
@@ -29,11 +30,11 @@ app.post("/", async (c) => {
 
     switch (payload.type) {
       case VapiWebhookEnum.FUNCTION_CALL:
-        console.log("func call");
+        console.log("func call as alias for tool calls");
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.TOOL_CALLS:
         console.log("tools call");
-
+        console.log("payload", payload);
         process.exit(1); // For debugging purposes, remove this in production
 
         return c.json(await functionCallHandler(payload), 201);

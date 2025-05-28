@@ -1,12 +1,8 @@
 import defaultFunctions from "../../functions";
-import {
-  FunctionCallPayload,
-  ToolCallsPayload,
-  VapiWebhookEnum,
-} from "../../types/vapi.types";
+import { FunctionCallPayload } from "../../types/vapi.types";
 
 export const functionCallHandler = async (
-  payload: FunctionCallPayload | ToolCallsPayload,
+  payload: FunctionCallPayload,
   functions: Record<string, Function> = defaultFunctions
 ) => {
   /**
@@ -15,63 +11,21 @@ export const functionCallHandler = async (
    * You can trigger the appropriate function based your requirements and configurations.
    * You can also have a set of validators along with each functions which can be used to first validate the parameters and then call the functions.
    * Here Assumption is that the function are handling the fallback cases as well. They should return the appropriate response in case of any error.
-   */ console.log("Function Call Payload:", payload);
+   */
+
+  console.log("Function Call Payload:", payload);
 
   //===================================================================================
-  // process.exit(1); // For debugging purposes, remove this in production
+  process.exit(1); // For debugging purposes, remove this in production
   //===================================================================================
 
-  // Extract function name and parameters based on payload type
-  let name: string;
-  let parameters: any;
+  const { functionCall } = payload;
 
-  if (
-    "type" in payload &&
-    payload.type === VapiWebhookEnum.TOOL_CALLS &&
-    "toolCalls" in payload &&
-    Array.isArray(payload.toolCalls) &&
-    payload.toolCalls.length > 0
-  ) {
-    // Handle tool-calls format
-    const toolCall = payload.toolCalls[0];
-    name = toolCall.function.name;
-    try {
-      parameters = JSON.parse(toolCall.function.arguments || "{}");
-    } catch (e) {
-      parameters = {};
-      console.error("Error parsing arguments:", e);
-    }
-    console.log("Extracted from tool-calls:", { name, parameters });
-  } else if (
-    "type" in payload &&
-    payload.type === VapiWebhookEnum.FUNCTION_CALL &&
-    "functionCall" in payload &&
-    payload.functionCall
-  ) {
-    // Handle function-call format
-    name = payload.functionCall.name;
-    parameters = payload.functionCall.parameters || {};
-    console.log("Extracted from function-call:", { name, parameters });
-  } else {
-    throw new Error("Invalid Request: No function call found in payload");
+  if (!functionCall) {
+    throw new Error("Invalid Request.");
   }
 
-  console.log("Function Call name:", name);
-
-  // Now we have name and parameters, regardless of which format was used
-  // Simply pass them to the appropriate function
-  if (name && Object.prototype.hasOwnProperty.call(functions, name)) {
-    return await functions[name](parameters);
-  } else {
-    console.warn(`Unknown function call: ${name}`);
-    return {
-      success: false,
-      error: `Function '${name}' is not recognized`,
-      message: "I'm sorry, I don't know how to handle that request.",
-    };
-  }
-
-  console.log("Function Call name:", name);
+  const { name, parameters } = functionCall;
 
   async function handleFunctionCall(functionCall) {
     const { name, parameters } = functionCall;
