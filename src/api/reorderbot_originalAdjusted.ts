@@ -8,11 +8,15 @@ import { createRepository } from "../supabase/generated-repo";
 import { supabaseClient } from "../supabase/client";
 import { promises as fs } from "fs";
 
+const path = require("path");
+
 type TenantRow = z.output<typeof tenantsRowSchema>;
 
 const app = new Hono<{ Bindings: Bindings }>();
 
 const customer_id = "9d8f7e6d-5c4b-4a2b-8c0d-9e8f7d6c5b4a";
+
+const agent = {};
 
 interface CustomerLastOrder {
   id: string;
@@ -383,6 +387,7 @@ app.post("/", async (c) => {
 </customer_information>`;
     console.log("\nExtracted customer:", xmlCustomer);
 
+    agent.xmlCustomer = xmlCustomer;
     //================
 
     // Extract company
@@ -399,6 +404,7 @@ app.post("/", async (c) => {
 </company_information>`;
     console.log("\nExtracted company:", xmlCompany);
 
+    agent.xmlCompany = xmlCompany;
     //================
 
     // Format the object as a readable JSON string with 2-space indentation
@@ -417,8 +423,9 @@ app.post("/", async (c) => {
     //   `reorderbot_originalAdjusted: formattedProposedOrder:`,
     //   formattedProposedOrder
     // );
-  }
 
+    agent.xmlProposedOrder = xmlProposedOrder;
+  }
   //==========================================================
   // Get all valid products from product_specials with complete details
   // Define an interface for your product specials
@@ -528,6 +535,8 @@ app.post("/", async (c) => {
     console.log("\nPromotional Offers:", xmlProductSpecials);
 
     //console.log("Transformed product specials:", formattedProductSpecials);
+
+    agent.xmlProductSpecials = xmlProductSpecials;
   }
 
   //=========================================================
@@ -593,6 +602,8 @@ app.post("/", async (c) => {
 </customer_favorite_items>`;
     console.log("\nCustomer Favorite Items:", xmlFavoriteProducts);
 
+    agent.xmlFavoriteProducts = xmlFavoriteProducts;
+
     //console.log("Favorite products details:", favoriteProducts);
 
     // result of the query will be an array of product objects
@@ -625,17 +636,166 @@ app.post("/", async (c) => {
 
   // ========================================================
 
+  // Get the tools
+  const tool_sendSmsOrderUpdate = {
+    name: "sendSmsOrderUpdate",
+    description:
+      "Send an updated order summary via SMS to the customer after any order modifications",
+    parameters: {
+      type: "object",
+      properties: {
+        customerPhone: {
+          type: "string",
+          description:
+            "Customer's phone number in E.164 format (e.g., +12175553456)",
+        },
+        customerName: {
+          type: "string",
+          description: "Customer's full name",
+        },
+        companyName: {
+          type: "string",
+          description: "Customer's company name",
+        },
+        orderItems: {
+          type: "array",
+          description: "Array of order line items",
+          items: {
+            type: "object",
+            properties: {
+              productName: {
+                type: "string",
+                description: "Name of the product",
+              },
+              size: {
+                type: "string",
+                description: "Product size/packaging",
+              },
+              quantity: {
+                type: "integer",
+                description: "Quantity ordered",
+              },
+              unitPrice: {
+                type: "number",
+                description: "Price per unit",
+              },
+              lineTotal: {
+                type: "number",
+                description: "Total for this line item (quantity × unitPrice)",
+              },
+            },
+            required: [
+              "productName",
+              "size",
+              "quantity",
+              "unitPrice",
+              "lineTotal",
+            ],
+          },
+        },
+        subtotal: {
+          type: "number",
+          description: "Order subtotal before taxes",
+        },
+        gst: {
+          type: "number",
+          description: "GST tax amount",
+        },
+        pst: {
+          type: "number",
+          description: "PST tax amount",
+        },
+        total: {
+          type: "number",
+          description: "Final total including all taxes",
+        },
+      },
+      required: [
+        "customerPhone",
+        "customerName",
+        "companyName",
+        "orderItems",
+        "subtotal",
+        "gst",
+        "pst",
+        "total",
+      ],
+    },
+  };
+
+  agent.tool = tool_sendSmsOrderUpdate;
+
+  //   agent.prompt = `
+
+  // ## Order Management Instructions
+
+  // You are helping the customer review and modify their proposed order using the data provided below.
+
+  // ${agent.xmlCustomer}
+
+  // ${agent.xmlCompany}
+
+  // ${agent.xmlProposedOrder}
+
+  // ${agent.xmlProductSpecials}
+
+  // ${agent.xmlFavoriteProducts}
+
+  // The customer can modify their order by adding, removing, or changing quantities. After any changes, use the sendSmsOrderUpdate tool with the customer and company information provided above.
+
+  // `;
+
+  //   console.log("Agent prompt:", agent.prompt);
+
   // Get the agent
   const agentFilePath =
     "C:/Users/3900X/Code/vapiordie3/vapiordie3/src/assistants/domain/acmecleaning.com/testsms/testSms.md";
-  let agentFileContents: string | null = null;
-  try {
-    agentFileContents = await fs.readFile(agentFilePath, "utf-8");
-    console.log("Agent file contents loaded.");
-  } catch (err) {
-    console.error("Failed to read agent file:", err);
+  //   let prompt_testSms: string | null = null;
+  //   try {
+  //     prompt_testSms = await fs.readFile(agentFilePath, "utf-8");
+  //     console.log("Agent file contents loaded.\n", prompt_testSms);
+  //   } catch (err) {
+  //     console.error("Failed to read agent file:", err);
+  //   }
+
+  //  agent.prompt = prompt_testSms
+
+  // Function to read prompt template from file and insert agent values
+  function buildPromptFromFile(templateFilePath, agent) {
+    try {
+      // Read the template file
+      const promptTemplate = fs.readFileSync(templateFilePath, "utf8");
+
+      // Replace template variables with actual values using a template literal function
+      const interpolate = (template, variables) => {
+        return new Function(
+          ...Object.keys(variables),
+          `return \`${template}\`;`
+        )(...Object.values(variables));
+      };
+
+      // Build the prompt by replacing template variables
+      const builtPrompt = interpolate(promptTemplate, {
+        agent: agent,
+      });
+
+      return builtPrompt;
+    } catch (error) {
+      console.error(`Error building prompt from template: ${error.message}`);
+      throw error;
+    }
   }
-  // Get the tools
+
+  // Usage example
+  try {
+    // const templatePath = path.join(__dirname, 'order-management-template.txt');
+    const templatePath = agentFilePath;
+    agent.prompt = buildPromptFromFile(templatePath, agent);
+    console.log("Prompt built successfully");
+    console.log("Agent prompt:", agent.prompt);
+  } catch (error) {
+    console.error("Failed to build prompt:", error);
+  }
 
   // Get the guardrails
 

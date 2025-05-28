@@ -896,10 +896,14 @@ ${xmlCustomer}
 ${xmlCompany}
 
 ${xmlProposedOrder}
-
+<!-- 
 ${xmlSpecials}
 
-${xmlFavorites}
+${xmlFavorites} -->
+
+${xmlProductSpecials}
+
+${xmlFavoriteProducts}
 
 The customer can modify their order by adding, removing, or changing quantities. After any changes, use the sendSmsOrderUpdate tool with the customer and company information provided above.
 `;
