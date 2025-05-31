@@ -3,8 +3,9 @@ import { getCharacterInspiration } from "./getCharacterInspiration";
 import { getRandomName } from "./getRandomName";
 import { getWeather } from "./weather";
 import { confirmOrder } from "./confirmOrder";
-import { sendOrderPackageBySms } from "./sendOrderPackageBySms";
 import { sendSmsOrderUpdate } from "./sendSmsOrderUpdate";
+import { sendSmsOrderSpecialsFavorites } from "./sendSmsOrderSpecialsFavorites";
+import { bookAppointment } from "./bookAppointment";
 
 export default {
   getWeather: getWeather,
@@ -13,6 +14,6 @@ export default {
   getCharacterInspiration: getCharacterInspiration,
   bookAppointment: bookAppointment,
   confirmOrder: confirmOrder,
-  sendOrderPackageBySms: sendOrderPackageBySms,
   sendSmsOrderUpdate: sendSmsOrderUpdate,
+  sendSmsOrderSpecialsFavorites: sendSmsOrderSpecialsFavorites,
 };

@@ -18,7 +18,7 @@ interface OrderItem {
 /**
  * Interface for SMS order update parameters
  */
-interface SendSmsOrderUpdateParams {
+interface sendSmsOrderSpecialsFavoritesParams {
   customerPhone: string;
   customerName: string;
   companyName: string;
@@ -44,10 +44,10 @@ interface SmsResponse {
  * @param params Order update parameters
  * @returns Response object with success status and details
  */
-export const sendSmsOrderUpdate = async (
-  params: SendSmsOrderUpdateParams
+export const sendSmsOrderSpecialsFavorites = async (
+  params: sendSmsOrderSpecialsFavoritesParams
 ): Promise<SmsResponse> => {
-  console.log("Function: sendSmsOrderUpdate.ts");
+  console.log("Function: sendSmsOrderSpecialsFavorites.ts");
   console.log("Request params:", params);
 
   try {
@@ -151,8 +151,8 @@ Reply to confirm or call to make changes.`;
 /**
  * Test the SMS function with sample data
  */
-export const testSendSmsOrderUpdate = () => {
-  const testParams: SendSmsOrderUpdateParams = {
+export const test_sendSmsOrderSpecialsFavorites = () => {
+  const testParams: sendSmsOrderSpecialsFavoritesParams = {
     customerPhone: "+17787754146",
     customerName: "James Wilson",
     companyName: "Acme Cleaning and Safety Supply Inc.",
@@ -178,8 +178,8 @@ export const testSendSmsOrderUpdate = () => {
     total: 126.5,
   };
 
-  console.log("Running test for sendSmsOrderUpdate...");
-  return sendSmsOrderUpdate(testParams);
+  console.log("Running test for sendSmsOrderSpecialsFavorites...");
+  return sendSmsOrderSpecialsFavorites(testParams);
 };
 
 // Allow running the test directly when this file is executed
@@ -187,7 +187,7 @@ if (require.main === module) {
   console.log("Running SMS order update test...");
   // Set test mode to true to prevent actual SMS sending during test
   process.env.SMS_TEST_MODE = "true";
-  testSendSmsOrderUpdate()
+  test_sendSmsOrderSpecialsFavorites()
     .then((result) => {
       console.log("Test result:", result);
       process.exit(0);
