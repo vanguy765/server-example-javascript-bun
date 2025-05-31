@@ -15,7 +15,7 @@ export const functionCallHandler = async (
    * You can trigger the appropriate function based your requirements and configurations.
    * You can also have a set of validators along with each functions which can be used to first validate the parameters and then call the functions.
    * Here Assumption is that the function are handling the fallback cases as well. They should return the appropriate response in case of any error.
-   */ console.log("Function Call Payload:", payload);
+   */ console.log("2 Function Call Payload:", payload);
 
   //===================================================================================
   // process.exit(1); // For debugging purposes, remove this in production
@@ -56,7 +56,7 @@ export const functionCallHandler = async (
     throw new Error("Invalid Request: No function call found in payload");
   }
 
-  console.log("Function Call name:", name);
+  console.log("1 Function Call name:", name);
 
   // Now we have name and parameters, regardless of which format was used
   // Simply pass them to the appropriate function
@@ -71,7 +71,7 @@ export const functionCallHandler = async (
     };
   }
 
-  console.log("Function Call name:", name);
+  console.log("3 Function Call name:", name);
 
   async function handleFunctionCall(functionCall) {
     const { name, parameters } = functionCall;

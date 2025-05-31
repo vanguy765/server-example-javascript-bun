@@ -18,7 +18,15 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 const customer_id = "9d8f7e6d-5c4b-4a2b-8c0d-9e8f7d6c5b4a";
 
-const agent = {};
+const agent: {
+  prompt?: string;
+  tool?: any;
+  xmlCustomer?: string;
+  xmlCompany?: string;
+  xmlProposedOrder?: string;
+  xmlProductSpecials?: string;
+  xmlFavoriteProducts?: string;
+} = {};
 
 interface CustomerLastOrder {
   id: string;
@@ -475,7 +483,7 @@ app.post("/", async (c) => {
   //   validProductSpecials
   // );
   //===========================================================
-  // Reult of the query will be an array of ProductSpecial objects
+  // Result of the query will be an array of ProductSpecial objects
   // Favorite products details: {
   //   data: [
   //     {
@@ -639,128 +647,121 @@ app.post("/", async (c) => {
   // ========================================================
 
   // Get the tools
-  const tool_sendSmsOrderUpdate = {
-    name: "sendSmsOrderUpdate",
-    description:
-      "Send an updated order summary via SMS to the customer after any order modifications",
-    parameters: {
-      type: "object",
-      properties: {
-        customerPhone: {
-          type: "string",
-          description:
-            "Customer's phone number in E.164 format (e.g., +12175553456)",
-        },
-        customerName: {
-          type: "string",
-          description: "Customer's full name",
-        },
-        companyName: {
-          type: "string",
-          description: "Customer's company name",
-        },
-        orderItems: {
-          type: "array",
-          description: "Array of order line items",
-          items: {
-            type: "object",
-            properties: {
-              productName: {
-                type: "string",
-                description: "Name of the product",
-              },
-              size: {
-                type: "string",
-                description: "Product size/packaging",
-              },
-              quantity: {
-                type: "integer",
-                description: "Quantity ordered",
-              },
-              unitPrice: {
-                type: "number",
-                description: "Price per unit",
-              },
-              lineTotal: {
-                type: "number",
-                description: "Total for this line item (quantity × unitPrice)",
-              },
-            },
-            required: [
-              "productName",
-              "size",
-              "quantity",
-              "unitPrice",
-              "lineTotal",
-            ],
-          },
-        },
-        subtotal: {
-          type: "number",
-          description: "Order subtotal before taxes",
-        },
-        gst: {
-          type: "number",
-          description: "GST tax amount",
-        },
-        pst: {
-          type: "number",
-          description: "PST tax amount",
-        },
-        total: {
-          type: "number",
-          description: "Final total including all taxes",
-        },
+  const tool_sendOrderPackageBySms = {
+    function: {
+      name: "sendOrderPackageBySms",
+      description:
+        "Sends an initial package of information (Proposed Order based on last order, Special Products, Favorite Products) to the customer's phone via SMS. The data is retrieved from the database using the callId.",
+      parameters: {
+        type: "object",
+        properties: {},
       },
-      required: [
-        "customerPhone",
-        "customerName",
-        "companyName",
-        "orderItems",
-        "subtotal",
-        "gst",
-        "pst",
-        "total",
-      ],
     },
+    type: "function",
   };
 
-  agent.tool = tool_sendSmsOrderUpdate;
+  // ========================================================
 
-  //   agent.prompt = `
+  const tool_sendSmsOrderUpdate = {
+    function: {
+      name: "sendSmsOrderUpdate",
+      description:
+        "Send an updated order summary via SMS to the customer after any order modifications",
+      parameters: {
+        type: "object",
+        properties: {
+          customerPhone: {
+            type: "string",
+            description:
+              "Customer's phone number in E.164 format (e.g., +12175553456)",
+          },
+          customerName: {
+            type: "string",
+            description: "Customer's full name",
+          },
+          companyName: {
+            type: "string",
+            description: "Customer's company name",
+          },
+          orderItems: {
+            type: "array",
+            description: "Array of order line items",
+            items: {
+              type: "object",
+              properties: {
+                productName: {
+                  type: "string",
+                  description: "Name of the product",
+                },
+                size: {
+                  type: "string",
+                  description: "Product size/packaging",
+                },
+                quantity: {
+                  type: "integer",
+                  description: "Quantity ordered",
+                },
+                unitPrice: {
+                  type: "number",
+                  description: "Price per unit",
+                },
+                lineTotal: {
+                  type: "number",
+                  description:
+                    "Total for this line item (quantity × unitPrice)",
+                },
+              },
+              required: [
+                "productName",
+                "size",
+                "quantity",
+                "unitPrice",
+                "lineTotal",
+              ],
+            },
+          },
+          subtotal: {
+            type: "number",
+            description: "Order subtotal before taxes",
+          },
+          gst: {
+            type: "number",
+            description: "GST tax amount",
+          },
+          pst: {
+            type: "number",
+            description: "PST tax amount",
+          },
+          total: {
+            type: "number",
+            description: "Final total including all taxes",
+          },
+        },
+        required: [
+          "customerPhone",
+          "customerName",
+          "companyName",
+          "orderItems",
+          "subtotal",
+          "gst",
+          "pst",
+          "total",
+        ],
+      },
+    },
+    type: "function",
+  };
 
-  // ## Order Management Instructions
+  agent.tool = tool_sendOrderPackageBySms;
+  // agent.tool = [];
 
-  // You are helping the customer review and modify their proposed order using the data provided below.
-
-  // ${agent.xmlCustomer}
-
-  // ${agent.xmlCompany}
-
-  // ${agent.xmlProposedOrder}
-
-  // ${agent.xmlProductSpecials}
-
-  // ${agent.xmlFavoriteProducts}
-
-  // The customer can modify their order by adding, removing, or changing quantities. After any changes, use the sendSmsOrderUpdate tool with the customer and company information provided above.
-
-  // `;
-
-  //   console.log("Agent prompt:", agent.prompt);
+  // =================================================================
+  // Create the prompt template for the voice assistant
+  // =================================================================
 
   // Get the agent
   const agentFilePath =
-    "C:/Users/3900X/Code/vapiordie3/vapiordie3/src/assistants/domain/acmecleaning.com/testsms/testSms.md";
-  //   let prompt_testSms: string | null = null;
-  //   try {
-  //     prompt_testSms = await fs.readFile(agentFilePath, "utf-8");
-  //     console.log("Agent file contents loaded.\n", prompt_testSms);
-  //   } catch (err) {
-  //     console.error("Failed to read agent file:", err);
-  //   }
-
-  //  agent.prompt = prompt_testSms
+    "C:\\Users\\3900X\\Code\\vapiordie3\\vapiordie3\\src\\assistants\\domain\\acmecleaning.com\\reorderbot\\agent_reorderbot_gemini.md";
 
   // Function to read prompt template from file and insert agent values
   function buildPromptFromFile(templateFilePath, agent) {
@@ -769,11 +770,33 @@ app.post("/", async (c) => {
       const promptTemplate = fs.readFileSync(templateFilePath, "utf8");
 
       // Replace template variables with actual values using a template literal function
+
       const interpolate = (template, variables) => {
-        return new Function(
-          ...Object.keys(variables),
-          `return \`${template}\`;`
-        )(...Object.values(variables));
+        // Create a safe copy of the variables to prevent template literal execution issues
+        const safeVariables = {};
+
+        // Stringify and re-parse any complex objects to remove functions/methods
+        for (const key in variables) {
+          if (typeof variables[key] === "object" && variables[key] !== null) {
+            safeVariables[key] = JSON.parse(JSON.stringify(variables[key]));
+          } else {
+            safeVariables[key] = variables[key];
+          }
+        }
+
+        // Escape any backtick characters in the template
+        const escapedTemplate = template.replace(/`/g, "\\`");
+
+        // Return a function that executes the template with the safe variables
+        try {
+          return new Function(
+            ...Object.keys(safeVariables),
+            `return \`${escapedTemplate}\`;`
+          )(...Object.values(safeVariables));
+        } catch (error) {
+          console.error("Error in template interpolation:", error);
+          return template; // Return original template if interpolation fails
+        }
       };
 
       // Build the prompt by replacing template variables
@@ -799,14 +822,11 @@ app.post("/", async (c) => {
     console.error("Failed to build prompt:", error);
   }
 
-  // Get the guardrails
+  console.log("DONE Agent prompt:", agent.prompt);
 
-  // Get the data objects
-
-  // Merge everything
-
-  // return c.json(proposedOrder, 200);
-  // process.exitCode = 0;
+  // =================================================================
+  // Create the voice assistant
+  // =================================================================
 
   const assistant = {
     transcriber: {
@@ -819,40 +839,10 @@ app.post("/", async (c) => {
       messages: [
         {
           role: "system",
-          content:
-            "You're a sales agent for a Bicky Realty. You're calling a list of leads to schedule appointments to show them houses...",
+          content: "REPLACE THIS WITH THE AGENT PROMPT",
         },
       ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "bookAppointment",
-            description: "Used to book the appointment.",
-            parameters: {
-              type: "object",
-              properties: {
-                datetime: {
-                  type: "string",
-                  description:
-                    "The date and time of the appointment in ISO format.",
-                },
-              },
-            },
-          },
-          async: true,
-        },
-        {
-          type: "transferCall",
-          destinations: [
-            {
-              type: "number",
-              number: "+16054440129",
-              message: "I am forwarding your call. Please stay on the line.",
-            },
-          ],
-        },
-      ],
+      tools: ["REPLACE THIS WITH agent.tool"],
     },
     voice: {
       provider: "openai",
@@ -861,16 +851,59 @@ app.post("/", async (c) => {
     voicemailMessage:
       "Hi, this is Jennifer from Bicky Realty. We were just calling to let you know...",
     firstMessage:
-      "Hi, this Jennifer from Bicky Realty. We're calling to schedule an appointment to show you a house. When would be a good time for you?",
+      "Hello, this is Alex, your AI sales assistant from Acme Cleaning Supply Inc.",
     endCallMessage: "Thanks for your time.",
     endCallFunctionEnabled: true,
     recordingEnabled: false,
     server: { url: "https://0489-24-86-56-54.ngrok-free.app/api/webhook" },
   };
+
+  // tools: [
+  //         {
+  //           type: "function",
+  //           function: {
+  //             name: "bookAppointment",
+  //             description: "Used to book the appointment.",
+  //             parameters: {
+  //               type: "object",
+  //               properties: {
+  //                 datetime: {
+  //                   type: "string",
+  //                   description:
+  //                     "The date and time of the appointment in ISO format.",
+  //                 },
+  //               },
+  //             },
+  //           },
+  //           async: true,
+  //         },
+  //         {
+  //           type: "transferCall",
+  //           destinations: [
+  //             {
+  //               type: "number",
+  //               number: "+16054440129",
+  //               message: "I am forwarding your call. Please stay on the line.",
+  //             },
+  //           ],
+  //         },
+  //       ]
+
+  assistant.model.messages[0].content = agent.prompt ?? "";
+  assistant.model.tools = [agent.tool];
+  // assistant.model.tools = [];
+
   console.log(
     "================================================================"
   );
   console.log("assistant:", assistant);
+  console.log(
+    "================================================================"
+  );
+
+  // console.log("process.exit(0);");
+  // process.exit(0);
+
   try {
     const response = await fetch(`${envConfig.vapi.baseUrl}/call/phone`, {
       method: "POST",
@@ -897,7 +930,25 @@ app.post("/", async (c) => {
     }
 
     const data = await response.json();
+
+    console.log("VAPI call successful:", data);
+    // Save to db by key callId
+
+    // use buildDynamicQuery
+
     return c.json(data, 200);
+
+    // const returnResults = {
+    //   results: [
+    //     {
+    //       toolCallId: "X",
+    //       result: `Copies of what the customer was sent by SMS. ${agent.xmlProposedOrder} ${agent.xmlProductSpecials} ${agent.xmlFavoriteProducts}`,
+    //     },
+    //   ],
+    // };
+
+    // return c.json(returnResults, 200);
+    // const data = {agent.xmlProposedOrder, agent.xmlProductSpecials, agent.xmlFavoriteProducts}
   } catch (error) {
     console.error("VAPI call failed:", error);
     const errorMessage =

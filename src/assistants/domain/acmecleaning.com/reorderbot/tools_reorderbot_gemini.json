@@ -1,0 +1,245 @@
+[
+  {
+    "name": "sendOrderPackageBySms",
+    "description": "Sends an initial package of information (Proposed Order based on last order, Special Products, Favorite Products) to the customer's phone via SMS. The data is retrieved from the database using the callId.",
+    "parameters": {
+      "type": "function",
+      "properties": {},
+      "required": []
+    },
+    "returns": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "failure"],
+          "description": "Indicates if the SMS package was successfully queued for sending."
+        },
+        "error": {
+          "type": "string",
+          "description": "Optional error message if status is 'failure'."
+        }
+      },
+      "required": ["status"]
+    }
+  },
+  {
+    "name": "updateOrderBySms",
+    "description": "Sends an updated version of the Proposed Order (PO) to the customer's phone via SMS and returns the PO that was sent. The AI should use the returned 'updatedPO' as the definitive current order.",
+    "parameters": {
+      "type": "function",
+      "properties": {
+        "currentPO": {
+          "type": "object",
+          "description": "The complete current proposed order object, including line items, subtotal, taxes, and total.",
+          "properties": {
+            "proposed_order_id_from_db": {
+              "type": "string",
+              "description": "The ID of the proposed order record in the database (e.g., from initial <pending_order_details>.proposed_order)"
+            },
+            "order_date": { "type": "string", "format": "date-time" },
+            "status": {
+              "type": "string",
+              "enum": ["pending_update", "pending_confirmation"]
+            },
+            "lineItems": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Line item ID, can be new if item added"
+                  },
+                  "product": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "size": { "type": "string" },
+                      "price": { "type": "number" },
+                      "description": { "type": "string" }
+                    },
+                    "required": ["id", "name", "price"]
+                  },
+                  "quantity": { "type": "integer" },
+                  "lineTotal": { "type": "number" }
+                },
+                "required": ["product", "quantity", "lineTotal"]
+              }
+            },
+            "subTotal": { "type": "number" },
+            "GST": { "type": "number" },
+            "PST": { "type": "number" },
+            "total": { "type": "number" }
+          },
+          "required": ["lineItems", "subTotal", "total"]
+        }
+      },
+      "required": ["currentPO"]
+    },
+    "returns": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "failure"],
+          "description": "Indicates if the update SMS was successfully queued."
+        },
+        "updatedPO": {
+          "type": "object",
+          "description": "The Proposed Order object that was sent via SMS. The AI should use this as the source of truth for the current order.",
+          "properties": {
+            "proposed_order_id_from_db": { "type": "string" },
+            "order_date": { "type": "string", "format": "date-time" },
+            "status": { "type": "string" },
+            "lineItems": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "product": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "size": { "type": "string" },
+                      "price": { "type": "number" },
+                      "description": { "type": "string" }
+                    }
+                  },
+                  "quantity": { "type": "integer" },
+                  "lineTotal": { "type": "number" }
+                }
+              }
+            },
+            "subTotal": { "type": "number" },
+            "GST": { "type": "number" },
+            "PST": { "type": "number" },
+            "total": { "type": "number" }
+          }
+        },
+        "error": {
+          "type": "string",
+          "description": "Optional error message if status is 'failure'."
+        }
+      },
+      "required": ["status"]
+    }
+  },
+  {
+    "name": "confirmOrder",
+    "description": "Submits the final confirmed order into the Acme Cleaning Supply database.",
+    "parameters": {
+      "type": "function",
+      "properties": {
+        "finalPO": {
+          "type": "object",
+          "description": "The final proposed order object to be confirmed.",
+          "properties": {
+            "proposed_order_id_from_db": { "type": "string" },
+            "order_date": { "type": "string", "format": "date-time" },
+            "status": { "type": "string", "default": "confirmed" },
+            "lineItems": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "product": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "size": { "type": "string" },
+                      "price": { "type": "number" },
+                      "description": { "type": "string" }
+                    }
+                  },
+                  "quantity": { "type": "integer" },
+                  "lineTotal": { "type": "number" }
+                }
+              }
+            },
+            "subTotal": { "type": "number" },
+            "GST": { "type": "number" },
+            "PST": { "type": "number" },
+            "total": { "type": "number" },
+            "paymentMethodId": {
+              "type": "string",
+              "description": "Optional: Identifier for payment method if needed at this stage."
+            }
+          },
+          "required": ["lineItems", "subTotal", "total"]
+        }
+      },
+      "required": ["finalPO"]
+    },
+    "returns": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "failure", "pending_payment"],
+          "description": "Indicates if the order was successfully created or status."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "The unique identifier for the newly created order, if successful."
+        },
+        "confirmationNumber": {
+          "type": "string",
+          "description": "A customer-facing confirmation number."
+        },
+        "estimatedDeliveryDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Estimated delivery date for the order."
+        },
+        "error": {
+          "type": "string",
+          "description": "Optional error message if status is 'failure'."
+        }
+      },
+      "required": ["status"]
+    }
+  },
+  {
+    "name": "transferCall",
+    "description": "Transfers the current call to a human agent or a specified department. The AI does not need to handle the response beyond acknowledging the transfer was requested.",
+    "parameters": {
+      "type": "function",
+      "properties": {
+        "targetQueue": {
+          "type": "string",
+          "description": "Optional. The specific queue or department to transfer to (e.g., 'Sales', 'Support'). Defaults to general customer service if not provided."
+        },
+        "reasonForTransfer": {
+          "type": "string",
+          "description": "A brief reason why the customer is being transferred, captured from the conversation if possible."
+        }
+      },
+      "required": []
+    },
+    "returns": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "failure"],
+          "description": "Indicates if the transfer request was acknowledged by the backend."
+        },
+        "transferId": {
+          "type": "string",
+          "description": "Optional. An identifier for the transfer attempt."
+        },
+        "error": {
+          "type": "string",
+          "description": "Optional error message if status is 'failure'."
+        }
+      },
+      "required": ["status"]
+    }
+  }
+]

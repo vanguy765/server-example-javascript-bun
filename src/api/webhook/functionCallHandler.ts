@@ -38,7 +38,19 @@ export const functionCallHandler = async (
     const toolCall = payload.toolCalls[0];
     name = toolCall.function.name;
     try {
-      parameters = JSON.parse(toolCall.function.arguments || "{}");
+      // Check if arguments is already an object (not a string)
+      if (
+        typeof toolCall.function.arguments === "object" &&
+        toolCall.function.arguments !== null
+      ) {
+        parameters = toolCall.function.arguments;
+      } else if (typeof toolCall.function.arguments === "string") {
+        // Try to parse the string as JSON
+        parameters = JSON.parse(toolCall.function.arguments || "{}");
+      } else {
+        // Default to empty object if arguments is undefined or another type
+        parameters = {};
+      }
     } catch (e) {
       parameters = {};
       console.error("Error parsing arguments:", e);
@@ -58,7 +70,7 @@ export const functionCallHandler = async (
     throw new Error("Invalid Request: No function call found in payload");
   }
 
-  console.log("Function Call name:", name);
+  console.log("4 Function Call name:", name);
 
   // Now we have name and parameters, regardless of which format was used
   // Call the appropriate function from our functions map

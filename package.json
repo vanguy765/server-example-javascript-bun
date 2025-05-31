@@ -6,14 +6,17 @@
     "gen:types:direct": "npx supabase gen types typescript --project-id hfxxpffuphxplzwbxyeb > src/supabase/generated.types.ts",
     "gen:schema-types": "bun --env-file=.env run scripts/introspect-schema.ts",
     "analyze:schema": "bun --env-file=.env run examples/query-schema-and-generate.ts",
-    "gen:cli-types": "bun --env-file=.env run scripts/cli-generate-types.ts"
+    "gen:cli-types": "bun --env-file=.env run scripts/cli-generate-types.ts",
+    "test:sms": "bun --env-file=.env run src/functions/sendSmsOrderUpdate.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.5.0",
     "@supabase/supabase-js": "^2.49.8",
+    "dotenv": "^16.5.0",
     "hono": "^4.7.10",
     "llamaindex": "^0.1.9",
     "openai": "^4.26.1",
+    "twilio": "^5.6.1",
     "zod": "^3.25.22"
   },
   "devDependencies": {

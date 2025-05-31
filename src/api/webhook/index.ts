@@ -3,7 +3,7 @@ import { VapiPayload, VapiWebhookEnum } from "../../types/vapi.types";
 import { Bindings } from "../../types/hono.types";
 import { assistantRequestHandler } from "./assistantRequest";
 import { endOfCallReportHandler } from "./endOfCallReport";
-import { functionCallHandler } from "./functionCall";
+import { functionCallHandler } from "./functionCallHandler";
 import { toolCallHandler } from "./toolCall";
 import { HangEventHandler } from "./hang";
 import { speechUpdateHandler } from "./speechUpdateHandler";
@@ -31,6 +31,7 @@ app.post("/", async (c) => {
     switch (payload.type) {
       case VapiWebhookEnum.FUNCTION_CALL:
         console.log("func call as alias for tool calls");
+        console.log("payload", payload);
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.TOOL_CALLS:
         console.log("tools call");

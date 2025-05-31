@@ -14,6 +14,7 @@ export const functionCallHandler = async (
    */
 
   console.log("Function Call Payload:", payload);
+  console.log("Process.exit(1)");
 
   //===================================================================================
   process.exit(1); // For debugging purposes, remove this in production
