@@ -2,7 +2,9 @@ import { findKeywords } from "./fetchKeyword";
 import { getCharacterInspiration } from "./getCharacterInspiration";
 import { getRandomName } from "./getRandomName";
 import { getWeather } from "./weather";
-import { bookAppointment } from "./bookAppointment";
+import { confirmOrder } from "./confirmOrder";
+import { sendOrderPackageBySms } from "./sendOrderPackageBySms";
+import { sendSmsOrderUpdate } from "./sendSmsOrderUpdate";
 
 export default {
   getWeather: getWeather,
@@ -10,4 +12,7 @@ export default {
   getRandomName: getRandomName,
   getCharacterInspiration: getCharacterInspiration,
   bookAppointment: bookAppointment,
+  confirmOrder: confirmOrder,
+  sendOrderPackageBySms: sendOrderPackageBySms,
+  sendSmsOrderUpdate: sendSmsOrderUpdate,
 };

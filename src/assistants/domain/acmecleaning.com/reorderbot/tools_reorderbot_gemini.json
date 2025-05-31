@@ -1,6 +1,6 @@
 [
   {
-    "name": "sendOrderPackageBySms",
+    "name": "sendSmsOrderSpecialsFavorites",
     "description": "Sends an initial package of information (Proposed Order based on last order, Special Products, Favorite Products) to the customer's phone via SMS. The data is retrieved from the database using the callId.",
     "parameters": {
       "type": "function",
@@ -24,7 +24,7 @@
     }
   },
   {
-    "name": "updateOrderBySms",
+    "name": "sendSmsOrderUpdate",
     "description": "Sends an updated version of the Proposed Order (PO) to the customer's phone via SMS and returns the PO that was sent. The AI should use the returned 'updatedPO' as the definitive current order.",
     "parameters": {
       "type": "function",

@@ -287,63 +287,6 @@ app.post("/", async (c) => {
     proposedOrder_temp
   );
 
-  // Result of the query will be an object with proposed order details
-  // Example output:
-  // reorderbot_originalAdjusted: proposedOrder: {
-  //   data: {
-  //     proposed_order: "2950963c-7f41-4739-8296-9ee0e0f0a6bd",
-  //     order_date: "2025-05-19T05:47:46.28778+00:00",
-  //     status: "confirmed",
-  //     lineItems: [
-  //       {
-  //         id: "c832c2be-f827-4e86-b249-7b0559d1a4c4",
-  //         product: {
-  //           id: "5c6d7e8f-9a0b-4f9b-d3e4-f5a6b7c8d9e0",
-  //           name: "Disinfectant Wipes",
-  //           size: "160 count",
-  //           price: 12.99,
-  //           description: "Pre-moistened disinfectant wipes for quick surface disinfection",
-  //         },
-  //         quantity: 4,
-  //       }, {
-  //         id: "2ab94983-72f8-4a33-9d1b-92d09a330ce8",
-  //         product: {
-  //           id: "6d7e8f9a-0b1c-4a0c-e4f5-a6b7c8d9e0f1",
-  //           name: "Hand Sanitizer Gel",
-  //           size: "1 Gallon",
-  //           price: 29.99,
-  //           description: "70% alcohol-based hand sanitizer gel with pump",
-  //         },
-  //         quantity: 2,
-  //       }, {
-  //         id: "5797f2e5-5c37-4a66-8010-dfabf99dcc25",
-  //         product: {
-  //           id: "0d1e2f3a-4b5c-4a46-8f9a-0b1c2d3e4f5a",
-  //           name: "Heavy-Duty Chemical Resistant Gloves",
-  //           size: "Medium (5 pack)",
-  //           price: 18.99,
-  //           description: "Reusable gloves for handling strong chemicals",
-  //         },
-  //         quantity: 1,
-  //       }
-  //     ],
-  //     customer: {
-  //       id: "9d8f7e6d-5c4b-4a2b-8c0d-9e8f7d6c5b4a",
-  //       phone: "+12175553456",
-  //       last_name: "Wilson",
-  //       first_name: "James",
-  //     },
-  //     company: {
-  //       id: "f0555d1a-5da7-4d15-b864-a1c6b16458a8",
-  //       name: "Acme Cleaning and Safety Supply Inc.",
-  //       domain: "acmecleaning.com",
-  //     },
-  //   },
-  //   error: null,
-  // }
-  //
-  // Add calculations for line totals, subtotal, taxes, and grand total
-
   const proposedOrder = proposedOrder_temp;
 
   if (proposedOrder?.data) {
@@ -478,37 +421,6 @@ app.post("/", async (c) => {
     sorting: [{ column: "discount", direction: "desc" }],
   });
 
-  // console.log(
-  //   `reorderbot_originalAdjusted: validProductSpecials:`,
-  //   validProductSpecials
-  // );
-  //===========================================================
-  // Result of the query will be an array of ProductSpecial objects
-  // Favorite products details: {
-  //   data: [
-  //     {
-  //       id: "7a8b9c0d-1e2f-4d13-5c6d-7e8f9a0b1c2d",
-  //       name: "Microfiber Cleaning Cloths",
-  //       description: "Multi-purpose microfiber cloths for various cleaning tasks",
-  //       size: "24 Pack",
-  //       price: 29.99,
-  //     }, {
-  //       id: "9c0d1e2f-3a4b-4f35-7e8f-9a0b1c2d3e4f",
-  //       name: "Nitrile Gloves",
-  //       description: "Disposable nitrile gloves, powder-free, large size",
-  //       size: "Large (100 count)",
-  //       price: 24.95,
-  //     }, {
-  //       id: "6d7e8f9a-0b1c-4a0c-e4f5-a6b7c8d9e0f1",
-  //       name: "Hand Sanitizer Gel",
-  //       description: "70% alcohol-based hand sanitizer gel with pump",
-  //       size: "1 Gallon",
-  //       price: 29.99,
-  //     }
-  //   ],
-  //   error: null,
-  // }
-
   // Process the valid product specials to add regular_price and calculate discounted price
   if (validProductSpecials?.data) {
     // Map through each product special and transform the price fields
@@ -613,35 +525,6 @@ app.post("/", async (c) => {
     console.log("\nCustomer Favorite Items:", xmlFavoriteProducts);
 
     agent.xmlFavoriteProducts = xmlFavoriteProducts;
-
-    //console.log("Favorite products details:", favoriteProducts);
-
-    // result of the query will be an array of product objects
-    // Example output:
-    //     Favorite products details: {
-    //   data: [
-    //     {
-    //       id: "7a8b9c0d-1e2f-4d13-5c6d-7e8f9a0b1c2d",
-    //       name: "Microfiber Cleaning Cloths",
-    //       description: "Multi-purpose microfiber cloths for various cleaning tasks",
-    //       size: "24 Pack",
-    //       price: 29.99,
-    //     }, {
-    //       id: "9c0d1e2f-3a4b-4f35-7e8f-9a0b1c2d3e4f",
-    //       name: "Nitrile Gloves",
-    //       description: "Disposable nitrile gloves, powder-free, large size",
-    //       size: "Large (100 count)",
-    //       price: 24.95,
-    //     }, {
-    //       id: "6d7e8f9a-0b1c-4a0c-e4f5-a6b7c8d9e0f1",
-    //       name: "Hand Sanitizer Gel",
-    //       description: "70% alcohol-based hand sanitizer gel with pump",
-    //       size: "1 Gallon",
-    //       price: 29.99,
-    //     }
-    //   ],
-    //   error: null,
-    // }
   }
 
   // ========================================================
@@ -858,37 +741,6 @@ app.post("/", async (c) => {
     server: { url: "https://0489-24-86-56-54.ngrok-free.app/api/webhook" },
   };
 
-  // tools: [
-  //         {
-  //           type: "function",
-  //           function: {
-  //             name: "bookAppointment",
-  //             description: "Used to book the appointment.",
-  //             parameters: {
-  //               type: "object",
-  //               properties: {
-  //                 datetime: {
-  //                   type: "string",
-  //                   description:
-  //                     "The date and time of the appointment in ISO format.",
-  //                 },
-  //               },
-  //             },
-  //           },
-  //           async: true,
-  //         },
-  //         {
-  //           type: "transferCall",
-  //           destinations: [
-  //             {
-  //               type: "number",
-  //               number: "+16054440129",
-  //               message: "I am forwarding your call. Please stay on the line.",
-  //             },
-  //           ],
-  //         },
-  //       ]
-
   assistant.model.messages[0].content = agent.prompt ?? "";
   assistant.model.tools = [agent.tool];
   // assistant.model.tools = [];
@@ -931,7 +783,10 @@ app.post("/", async (c) => {
 
     const data = await response.json();
 
-    console.log("VAPI call successful:", data);
+    console.log(
+      "=================================================================================="
+    );
+    console.log("VAPI call successful:", data.id);
     // Save to db by key callId
 
     // use buildDynamicQuery

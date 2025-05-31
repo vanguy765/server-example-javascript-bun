@@ -5,6 +5,10 @@ import {
   VapiWebhookEnum,
 } from "../../types/vapi.types";
 
+console.log("Files functionCall.ts:");
+console.log("Function Call Payload:", payload);
+console.log("Process.exit(1)");
+
 export const functionCallHandler = async (
   payload: FunctionCallPayload | ToolCallsPayload,
   functions: Record<string, Function> = defaultFunctions

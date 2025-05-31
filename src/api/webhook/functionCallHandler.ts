@@ -17,8 +17,9 @@ export const functionCallHandler = async (
    * Here Assumption is that the function are handling the fallback cases as well. They should return the appropriate response in case of any error.
    */
 
+  console.log("Files functionCallHandler.ts:");
   console.log("Function Call Payload:", payload);
-
+  console.log("Process.exit(1)");
   //===================================================================================
   // process.exit(1); // For debugging purposes, remove this in production
   //===================================================================================
