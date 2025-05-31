@@ -7,10 +7,10 @@
  */
 
 import { Hono } from "hono";
-import { Bindings } from "../../types/hono.types";
+import { Bindings } from "../types/hono.types";
 import { z } from "zod";
-import { tenantsRowSchema } from "../../supabase/generated.schemas";
-import { createRepository } from "../../supabase/generated-repo";
+import { tenantsRowSchema } from "../supabase/generated.schemas";
+import { createRepository } from "../supabase/generated-repo";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -137,7 +137,7 @@ app.post("/", async (c) => {
     // 6. Build the agent's prompt from template file
     const agentFilePath = path.join(
       __dirname,
-      "../../assistants/domain/acmecleaning.com/reorderbot/agent_reorderbot_gemini.md"
+      "../../src/assistants/domain/acmecleaning.com/reorderbot/agent_reorderbot_gemini.md"
     );
 
     agent.prompt = buildPromptFromFile(agentFilePath, agent);

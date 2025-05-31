@@ -11,7 +11,7 @@ export function createRepository<
   T extends keyof Database["public"]["Tables"],
   Row = Database["public"]["Tables"][T]["Row"],
   Insert = Database["public"]["Tables"][T]["Insert"],
-  Update = Database["public"]["Tables"][T]["Update"],
+  Update = Database["public"]["Tables"][T]["Update"]
 >(tableName: T) {
   return {
     /**
@@ -151,6 +151,38 @@ export function createRepository<
     },
 
     /**
+     * Get a single record by a specific column value
+     * Similar to getBy, but returns a single record using .single() and handles not found cases
+     *
+     * @param column The column name to filter on (string-based for flexibility with dynamic columns)
+     * @param value The value to filter by
+     * @returns A single record matching the filter or null if not found
+     * @throws Error if the specified column doesn't exist in the table definition
+     */
+    getByColumn: async (column: string, value: any) => {
+      // Attempt to validate if column exists in table definition
+      // @ts-ignore - Accessing internal schema information
+      const columns = (supabaseClient as any).schema?.public?.Tables?.[
+        tableName
+      ]?.columns;
+      if (columns && !columns[column]) {
+        throw new Error(
+          `Column "${column}" does not exist on table "${tableName}"`
+        );
+      }
+
+      const { data, error } = await supabaseClient
+        .from(tableName)
+        .select("*")
+        .eq(column, value)
+        .single();
+
+      // Handle not found case with null return instead of exception
+      if (error && error.code !== "PGRST116") throw error;
+      return data as Row | null;
+    },
+
+    /**
      * Create a filter builder for more complex queries
      * @returns A PostgREST filter builder
      */
@@ -238,12 +270,14 @@ export const repositories = {
   apiKeys: createRepository("api_keys"),
   auditLogs: createRepository("audit_logs"),
   callLogs: createRepository("call_logs"),
-  customerInteractions: createRepository("customer_interactions"),
+  // @ts-ignore - Type 'customer_interactions' may not be defined in the Database type yet
+  customerInteractions: createRepository("customer_interactions" as any),
   customerPreferences: createRepository("customer_preferences"),
   customers: createRepository("customers"),
   industries: createRepository("industries"),
   ipAllowlist: createRepository("ip_allowlist"),
-  messages: createRepository("messages"),
+  // @ts-ignore - Type 'messages' may not be defined in the Database type yet
+  messages: createRepository("messages" as any),
   orderItems: createRepository("order_items"),
   orders: createRepository("orders"),
   productCategories: createRepository("product_categories"),
