@@ -2,11 +2,17 @@
   "scripts": {
     "start": "bun --env-file=.env run --hot src/index.ts",
     "gen:types": "bun --env-file=.env run scripts/generate-types-fixed.ts",
+    "gen:types:local": "bun --env-file=.env run scripts/generate-local-types.ts",
+    "gen:types:local:old": "bun --env-file=.env run scripts/generate-types-fixed.ts --local",
     "gen:types:hfxxp": "bun --env-file=.env run scripts/generate-types-fixed.ts --project-id=hfxxpffuphxplzwbxyeb",
     "gen:types:direct": "npx supabase gen types typescript --project-id hfxxpffuphxplzwbxyeb > src/supabase/generated.types.ts",
+    "gen:types:pgdump": "pg_dump --schema-only --no-owner --no-acl -f src/supabase/schema.sql -h 127.0.0.1 -p 54322 -U postgres postgres",
+    "gen:types:from-schema": "bun --env-file=.env run scripts/enhanced-type-generator.ts",
+    "gen:full-local": "bun --env-file=.env run scripts/generate-full-local-types.ts",
+    "analyze:schema": "bun --env-file=.env run scripts/enhanced-schema-analyzer.ts",
     "gen:schema-types": "bun --env-file=.env run scripts/introspect-schema.ts",
-    "analyze:schema": "bun --env-file=.env run examples/query-schema-and-generate.ts",
     "gen:cli-types": "bun --env-file=.env run scripts/cli-generate-types.ts",
+    "db:typegen": "bun --env-file=.env run scripts/run-db-typegen-workflow.ts",
     "test:sms": "bun --env-file=.env run src/functions/sendSmsOrderUpdate.ts"
   },
   "dependencies": {

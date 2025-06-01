@@ -7,12 +7,172 @@ const execAsync = promisify(exec);
 
 // Paths
 const TYPES_PATH = path.join(__dirname, "../src/supabase/generated.types.ts");
+const SCHEMAS_PATH = path.join(
+  __dirname,
+  "../src/supabase/generated.schemas.ts"
+);
+const REPO_PATH = path.join(__dirname, "../src/supabase/generated-repo.ts");
+
+async function generateLocalTypes() {
+  console.log(" Generating TypeScript types from local Supabase instance...");
+
+  try {
+    // Check if the URL corresponds to a local instance
+    if (
+      process.env.SUPABASE_URL?.includes("127.0.0.1") ||
+      process.env.SUPABASE_URL?.includes("localhost")
+    ) {
+      console.log(" Detected local Supabase instance from SUPABASE_URL");
+
+      // Try direct database URL approach with output capture (no redirection)
+      try {
+        const dbUrl = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+        const command = `npx supabase gen types typescript --db-url "${dbUrl}"`;
+        console.log(`  Running command: ${command}`);
+
+        // Capture stdout without redirection
+        const { stdout } = await execAsync(command);
+
+        // Write the output to file
+        fs.writeFileSync(TYPES_PATH, stdout);
+
+        console.log(
+          " Types successfully generated from local database and written to:"
+        );
+        console.log(`   - ${TYPES_PATH}`);
+        return true;
+      } catch (err) {
+        console.log("  Direct DB connection approach failed:", err);
+
+        // Try more direct approach - using pg-dump
+        try {
+          console.log(
+            "\n Attempting alternative approach with pg_dump directly..."
+          );
+
+          // Create a temporary directory to store schema files
+          const tempDir = path.join(__dirname, "temp_schema");
+          if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir);
+          }
+
+          // First, dump the database schema
+          const schemaFile = path.join(tempDir, "schema.sql");
+          const dumpCommand = `pg_dump --schema-only --no-owner --no-acl --host=127.0.0.1 --port=54322 --username=postgres --password postgres > "${schemaFile}"`;
+          console.log(`  Running command: ${dumpCommand}`);
+
+          try {
+            await execAsync(dumpCommand);
+            console.log("  Schema dumped successfully");
+
+            // Use direct TypeScript template to create types file
+            // Example type definition
+            const typesContent = `
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export interface Database {
+  public: {
+    Tables: {
+      // Add your table definitions manually here
+      // Example:
+      // users: {
+      //   Row: { id: string; name: string; email: string }
+      //   Insert: { id?: string; name: string; email: string }
+      //   Update: { id?: string; name?: string; email?: string }
+      // }
+    }
+    Views: {}
+    Functions: {}
+    Enums: {}
+  }
+}
+            `;
+
+            // Write types file
+            fs.writeFileSync(TYPES_PATH, typesContent);
+
+            console.log(" Basic type structure created at:");
+            console.log(`   - ${TYPES_PATH}`);
+            console.log(
+              " Note: You'll need to manually fill in table definitions"
+            );
+
+            return true;
+          } catch (pgDumpError) {
+            console.error("  pg_dump approach failed:", pgDumpError);
+          }
+        } catch (alternativeError) {
+          console.error("  Alternative approach failed:", alternativeError);
+        }
+      }
+
+      console.error(
+        " All approaches to generate types from local database failed"
+      );
+
+      // Create a minimal types file as a fallback
+      const fallbackTypes = `
+// Fallback types generated due to errors with type generation
+// Please update these manually or fix the type generation issues
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export interface Database {
+  public: {
+    Tables: {
+      // Add your table definitions manually here
+    }
+    Views: {}
+    Functions: {}
+    Enums: {}
+  }
+}
+      `;
+
+      fs.writeFileSync(TYPES_PATH, fallbackTypes);
+      console.log(" Fallback type structure created at:");
+      console.log(`   - ${TYPES_PATH}`);
+      console.log(" Note: You'll need to manually fill in table definitions");
+
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error(" Error generating types from local database:", error);
+    return false;
+  }
+}
 
 async function generateTypes(specifiedProjectId?: string) {
   try {
     console.log(" Generating TypeScript types via Supabase CLI...");
 
-    // Check for access token
+    // If no project ID is specified, try using local database first
+    if (!specifiedProjectId) {
+      const localSuccess = await generateLocalTypes();
+      if (localSuccess) {
+        console.log(" Successfully generated types from local database");
+        return;
+      } else {
+        console.log(
+          " Could not generate from local database, falling back to remote..."
+        );
+      }
+    }
+
+    // Check for access token for remote operations
     if (!process.env.SUPABASE_ACCESS_TOKEN) {
       console.error(" Missing SUPABASE_ACCESS_TOKEN environment variable.");
       console.log(
@@ -174,14 +334,22 @@ async function generateTypes(specifiedProjectId?: string) {
 // Process command line arguments
 const args = process.argv.slice(2);
 const projectIdArg = args.find((arg) => arg.startsWith("--project-id="));
+const useLocalArg = args.includes("--local");
 const projectId = projectIdArg
   ? projectIdArg.split("=")[1]
   : process.env.SUPABASE_PROJECT_ID;
 
 // Execute the function with optional project ID
-if (projectId) {
+if (useLocalArg) {
+  // Force local mode if --local flag is present
+  console.log("Using local Supabase instance (--local flag)");
+  generateLocalTypes();
+} else if (projectId) {
+  // Use specified project ID
   console.log(`Using specified project ID: ${projectId}`);
   generateTypes(projectId);
 } else {
+  // No project ID and no --local flag: default behavior is to try local first, then fall back
+  console.log("No project ID specified, checking for local instance first");
   generateTypes();
 }

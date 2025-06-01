@@ -2,6 +2,26 @@
 
 This document explains how to automatically generate TypeScript interfaces, types, and Zod schemas from your Supabase database.
 
+## Method 0: Enhanced Workflow (Recommended)
+
+The most comprehensive approach that generates types, schemas, repositories, and documentation:
+
+```bash
+npm run db:typegen
+# or
+bun run db:typegen
+```
+
+This enhanced workflow will:
+
+1. Dump the schema from your local Supabase instance
+2. Parse the schema to extract table and enum definitions
+3. Generate TypeScript types in `src/supabase/generated.types.ts`
+4. Generate Zod schemas in `src/supabase/generated.schemas.ts`
+5. Generate repository helpers in `src/supabase/generated-repo.ts`
+6. Generate enum definitions in `src/supabase/generated.enums.ts` (if enums exist)
+7. Generate detailed documentation in `docs/auto-generated-types.md`
+
 ## Method 1: Using Supabase CLI (Types Only)
 
 1. First, make sure you have Supabase CLI installed:

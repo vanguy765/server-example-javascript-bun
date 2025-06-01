@@ -170,5 +170,6 @@ export const buildDynamicQuery = async <
     }
 
     // Default return with proper typing
-    return { data: data as TResponseData | null, error };  });
+    return { data: data as TResponseData | null, error };
+  });
 };

@@ -221,13 +221,19 @@ app.post("/", async (c) => {
     assistantId: ${assistantId}, 
     customerNumber: ${customerNumber}`
   );
-
   let tenants: TenantRow[] | undefined;
-
   let proposedOrder_temp: BuildDynamicQueryResponse<ProposedOrder> | undefined;
+
   try {
-    const tenantsRepository = createRepository("tenants");
+    // Import our new safe repository utility
+    const { getSafeRepository } = require("./db-utils");
+
+    // Safely get a repository that won't cause the "client.from is not a function" error
+    const tenantsRepository = await getSafeRepository("tenants");
+
+    // This will work regardless of client initialization issues
     const fetchedTenantsFromRepo = await tenantsRepository.getAll();
+
     if (fetchedTenantsFromRepo) {
       tenants = fetchedTenantsFromRepo as TenantRow[];
     } else {
@@ -235,7 +241,7 @@ app.post("/", async (c) => {
     }
 
     console.log(
-      "Successfully retrieved tenants using dynamic repository:",
+      "Successfully retrieved tenants using safe repository pattern:",
       tenants
     );
 

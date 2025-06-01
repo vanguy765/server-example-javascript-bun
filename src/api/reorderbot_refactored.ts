@@ -9,8 +9,9 @@
 import { Hono } from "hono";
 import { Bindings } from "../types/hono.types";
 import { z } from "zod";
-import { tenantsRowSchema } from "../supabase/generated.schemas";
+import { TenantsSchema } from "../supabase/generated.schemas";
 import { createRepository } from "../supabase/generated-repo";
+import { getSafeRepository } from "./db-utils";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -39,7 +40,7 @@ import {
 import { makeOutboundCall } from "./utils/vapiService";
 
 // Define type for tenant rows from the database
-type TenantRow = z.output<typeof tenantsRowSchema>;
+type TenantRow = z.output<typeof TenantsSchema>;
 
 // Create Hono app with bindings
 const app = new Hono<{ Bindings: Bindings }>();
@@ -68,7 +69,7 @@ app.post("/", async (c) => {
 
   try {
     // 1. Fetch tenants for verification/access control
-    const tenantsRepository = createRepository("tenants");
+    const tenantsRepository = await getSafeRepository("tenants");
     const tenants = (await tenantsRepository.getAll()) as TenantRow[];
     console.log("Successfully retrieved tenants:", tenants);
 
@@ -145,21 +146,24 @@ app.post("/", async (c) => {
 
     // 7. Create the assistant configuration
     const assistant = createAssistantConfig(agent);
-    console.log("Assistant configuration created");
-
-    // 8. Make the outbound call using VAPI
+    console.log("Assistant configuration created"); // 8. Make the outbound call using VAPI
     const callResponse = await makeOutboundCall({
       phoneNumberId,
       assistant,
       customerNumber,
     });
 
-    console.log("VAPI call successful:", callResponse.id);
+    // Add type assertion for callResponse
+    const typedCallResponse = callResponse as {
+      id: string;
+      [key: string]: any;
+    };
+    console.log("VAPI call successful:", typedCallResponse.id);
 
     // TODO: Save the call ID to the database for reference
 
     // Return the call response to the client
-    return c.json(callResponse, 200);
+    return c.json(typedCallResponse, 200);
   } catch (error) {
     console.error("Error during call setup:", error);
 
