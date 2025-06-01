@@ -41,8 +41,9 @@ export interface FavoriteProduct {
  * @returns A promise with the product specials or null if none found
  */
 export async function fetchProductSpecials(tenantId: string) {
-  return await buildDynamicQuery<"product_specials_view", ProductSpecial[]>(
-    "product_specials_view",
+  // Using string literal for table name since the view might not be in the TypeScript types
+  return await buildDynamicQuery<any, ProductSpecial[]>(
+    "product_specials_view" as any,
     {
       columns: [
         "id:product_id",
@@ -190,9 +191,51 @@ export async function fetchFavoriteProducts(productIds: string[]) {
  * @returns XML-formatted string of favorite products
  */
 export function formatFavoriteProducts(products: any): string {
-  const formattedFavoriteProductsJson = JSON.stringify(products, null, 2);
-  return `
-<customer_favorite_items>
-      ${formattedFavoriteProductsJson}
+  console.log(
+    "Original products data structure:",
+    JSON.stringify(products, null, 2)
+  );
+
+  // Make sure we're working with the actual data array
+  const productArray = Array.isArray(products) ? products : products.data || [];
+
+  console.log("Extracted product array length:", productArray.length);
+
+  // Clean and normalize the product data
+  const cleanedProducts = productArray
+    .map((product: FavoriteProduct) => {
+      // Validate product properties before using them
+      if (!product || typeof product !== "object") {
+        console.warn("Invalid product item:", product);
+        return null;
+      }
+
+      return {
+        id: product.id || "unknown",
+        name: product.name || "Unnamed Product",
+        description: product.description || "",
+        size: product.size || "",
+        price:
+          typeof product.price === "number"
+            ? product.price
+            : parseFloat(String(product.price || "0")),
+      };
+    })
+    .filter(Boolean); // Remove any null entries
+
+  console.log("Cleaned products:", JSON.stringify(cleanedProducts, null, 2));
+
+  // Format as JSON with proper indentation
+  const formattedFavoriteProductsJson = JSON.stringify(
+    cleanedProducts,
+    null,
+    2
+  );
+
+  // Use consistent indentation and make sure there's only one copy of the data
+  const result = `<customer_favorite_items>
+${formattedFavoriteProductsJson}
 </customer_favorite_items>`;
+
+  return result;
 }

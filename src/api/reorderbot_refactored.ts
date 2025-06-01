@@ -15,6 +15,12 @@ import { getSafeRepository } from "./db-utils";
 import * as path from "path";
 import * as fs from "fs";
 
+import {
+  saveProductSpecials,
+  saveCustomerPreferences,
+  saveCustomerLastOrder,
+} from "../supabase/save-proposed-orders-data";
+
 // Import utility modules
 import { buildDynamicQuery } from "./utils/queryBuilder";
 import {
@@ -157,11 +163,55 @@ app.post("/", async (c) => {
     const typedCallResponse = callResponse as {
       id: string;
       [key: string]: any;
-    };
+    }; // After the call response is received and logged
     console.log("VAPI call successful:", typedCallResponse.id);
 
-    // TODO: Save the call ID to the database for reference
+    // Save the data to the database
+    try {
+      // Get repository directly using getSafeRepository function
+      const proposedOrdersDataRepo = await getSafeRepository(
+        "proposed_orders_data"
+      );
 
+      // 1. Save product specials data
+      if (productSpecialsResult) {
+        await proposedOrdersDataRepo.create({
+          call_id: typedCallResponse.id,
+          customer_id: CUSTOMER_ID,
+          tenant_id: TENANT_ID,
+          data: productSpecialsResult,
+          data_type: "special",
+        });
+        console.log("Product specials saved to database");
+      }
+
+      // 2. Save customer preferences/favorites data
+      if (customerPreferencesResult) {
+        await proposedOrdersDataRepo.create({
+          call_id: typedCallResponse.id,
+          customer_id: CUSTOMER_ID,
+          tenant_id: TENANT_ID,
+          data: customerPreferencesResult,
+          data_type: "favorites",
+        });
+        console.log("Customer preferences saved to database");
+      }
+
+      // 3. Save proposed order data
+      if (proposedOrderResult) {
+        await proposedOrdersDataRepo.create({
+          call_id: typedCallResponse.id,
+          customer_id: CUSTOMER_ID,
+          tenant_id: TENANT_ID,
+          data: proposedOrderResult,
+          data_type: "order",
+        });
+        console.log("Last order data saved to database");
+      }
+    } catch (saveError) {
+      console.error("Error saving data to database:", saveError);
+      // Continue with the request even if saving fails
+    }
     // Return the call response to the client
     return c.json(typedCallResponse, 200);
   } catch (error) {

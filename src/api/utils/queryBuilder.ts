@@ -115,7 +115,9 @@ export const buildDynamicQuery = async <
   }
 
   // Apply a custom JSON key to the entire result if specified
-  const finalSelectString = jsonKey ? `${jsonKey}:${selectString}` : selectString;
+  const finalSelectString = jsonKey
+    ? `${jsonKey}:${selectString}`
+    : selectString;
 
   // Use safeQueryTable to ensure robust client handling
   return await safeQueryTable(tableName, async (client) => {
@@ -170,5 +172,6 @@ export const buildDynamicQuery = async <
     }
 
     // Default return with proper typing
-    return { data: data as TResponseData | null, error };  });
+    return { data: data as TResponseData | null, error };
+  });
 };
