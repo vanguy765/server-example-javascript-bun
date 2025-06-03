@@ -22,7 +22,7 @@ The repository pattern is implemented in `src/supabase/generated-repo.ts` with t
 #### Core Factory Function
 
 ```typescript
-createRepository<T>(client, tableName)
+createRepository<T>(client, tableName);
 ```
 
 This is the foundation that creates a repository for any table with standardized methods:
@@ -39,8 +39,8 @@ This is the foundation that creates a repository for any table with standardized
 For each table, a specialized creator function is generated:
 
 ```typescript
-createProductsRepository(client)
-createCustomersRepository(client)
+createProductsRepository(client);
+createCustomersRepository(client);
 // etc.
 ```
 
@@ -89,7 +89,7 @@ import { buildDynamicQuery } from "../api/utils/queryBuilder";
 
 // Get all products with specific columns
 const { data, error } = await buildDynamicQuery("products", {
-  columns: ["id", "name", "price", "created_at"]
+  columns: ["id", "name", "price", "created_at"],
 });
 ```
 
@@ -99,9 +99,7 @@ const { data, error } = await buildDynamicQuery("products", {
 // Get products with price > 100
 const { data, error } = await buildDynamicQuery("products", {
   columns: ["id", "name", "price"],
-  filters: [
-    { column: "price", operator: "gt", value: 100 }
-  ]
+  filters: [{ column: "price", operator: "gt", value: 100 }],
 });
 ```
 
@@ -112,8 +110,8 @@ const { data, error } = await buildDynamicQuery("products", {
 const { data, error } = await buildDynamicQuery("orders", {
   columns: ["id", "order_number", "total"],
   relationships: [
-    { table: "order_items", columns: ["product_id", "quantity", "price"] }
-  ]
+    { table: "order_items", columns: ["product_id", "quantity", "price"] },
+  ],
 });
 ```
 
@@ -122,10 +120,8 @@ const { data, error } = await buildDynamicQuery("orders", {
 ```typescript
 // Get sorted and limited list
 const { data, error } = await buildDynamicQuery("products", {
-  sorting: [
-    { column: "created_at", direction: "desc" }
-  ],
-  limit: 10
+  sorting: [{ column: "created_at", direction: "desc" }],
+  limit: 10,
 });
 ```
 
@@ -137,7 +133,7 @@ const { data, error } = await buildDynamicQuery("products", {
   columns: ["id", "name", "description"],
   filters: [{ column: "id", operator: "eq", value: productId }],
   jsonKey: "product",
-  single: true
+  single: true,
 });
 ```
 
@@ -153,16 +149,17 @@ const productsRepo = await getSafeRepository("products");
 const product = await productsRepo.getById("123");
 
 // For complex queries, use the query() method with Supabase's API
-const { data } = await productsRepo.query()
+const { data } = await productsRepo
+  .query()
   .select("name, price")
   .eq("category", "electronics")
   .order("price", { ascending: true });
-  
+
 // Or use the buildDynamicQuery utility for more complex needs
 const { data } = await buildDynamicQuery("products", {
   columns: ["id", "name", "price"],
   filters: [{ column: "category", operator: "eq", value: "electronics" }],
-  sorting: [{ column: "price", direction: "asc" }]
+  sorting: [{ column: "price", direction: "asc" }],
 });
 ```
 
@@ -189,7 +186,7 @@ try {
 
 // With query builder
 const { data, error } = await buildDynamicQuery("products", {
-  columns: ["id", "name"]
+  columns: ["id", "name"],
 });
 
 if (error) {

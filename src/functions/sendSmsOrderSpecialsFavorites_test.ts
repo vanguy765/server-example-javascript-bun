@@ -50,6 +50,12 @@ export const sendSmsOrderUpdate = async (
   console.log("Function: sendSmsOrderUpdate.ts");
   console.log("Request params:", params);
 
+  console.log("Call id:", params.call.id);
+
+  process.exit(1); //
+  //
+  // VapiWebhookEnumFor debugging purposes, remove this in production
+
   try {
     // Validate parameters
     if (

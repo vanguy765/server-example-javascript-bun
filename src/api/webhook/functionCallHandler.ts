@@ -16,10 +16,11 @@ export const functionCallHandler = async (
    * You can also have a set of validators along with each functions which can be used to first validate the parameters and then call the functions.
    * Here Assumption is that the function are handling the fallback cases as well. They should return the appropriate response in case of any error.
    */
-
+  console.log(
+    ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+  );
   console.log("Files functionCallHandler.ts:");
-  console.log("Function Call Payload:", payload);
-  console.log("Process.exit(1)");
+  console.log("Function Call Payload Call id:", payload.call.id);
   //===================================================================================
   // process.exit(1); // For debugging purposes, remove this in production
   //===================================================================================
@@ -56,7 +57,8 @@ export const functionCallHandler = async (
       parameters = {};
       console.error("Error parsing arguments:", e);
     }
-    console.log("Extracted from tool-calls:", { name, parameters });
+
+    console.log("1. Extracted from tool-calls:", { name, parameters });
   } else if (
     "type" in payload &&
     payload.type === VapiWebhookEnum.FUNCTION_CALL &&
@@ -66,7 +68,7 @@ export const functionCallHandler = async (
     // Handle function-call format
     name = payload.functionCall.name;
     parameters = payload.functionCall.parameters || {};
-    console.log("Extracted from function-call:", { name, parameters });
+    console.log("2. Extracted from function-call:", { name, parameters });
   } else {
     throw new Error("Invalid Request: No function call found in payload");
   }

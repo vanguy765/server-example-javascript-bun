@@ -24,9 +24,9 @@ export interface AgentConfig {
 /**
  * Assistant tool for sending the order package via SMS
  */
-export const tool_sendOrderPackageBySms = {
+export const tool_sendSmsOrderSpecialsFavorites = {
   function: {
-    name: "sendOrderPackageBySms",
+    name: "sendSmsOrderSpecialsFavorites",
     description:
       "Sends an initial package of information (Proposed Order based on last order, Special Products, Favorite Products) to the customer's phone via SMS. The data is retrieved from the database using the callId.",
     parameters: {
@@ -219,6 +219,6 @@ export function createAssistantConfig(agentConfig: AgentConfig) {
     endCallMessage: "Thanks for your time.",
     endCallFunctionEnabled: true,
     recordingEnabled: false,
-    server: { url: "https://0489-24-86-56-54.ngrok-free.app/api/webhook" },
+    server: { url: "https://0746-24-86-56-54.ngrok-free.app/api/webhook" },
   };
 }

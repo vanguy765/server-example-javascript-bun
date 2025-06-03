@@ -536,9 +536,9 @@ app.post("/", async (c) => {
   // ========================================================
 
   // Get the tools
-  const tool_sendOrderPackageBySms = {
+  const tool_sendSmsOrderSpecialsFavorites = {
     function: {
-      name: "sendOrderPackageBySms",
+      name: "sendSmsOrderSpecialsFavorites",
       description:
         "Sends an initial package of information (Proposed Order based on last order, Special Products, Favorite Products) to the customer's phone via SMS. The data is retrieved from the database using the callId.",
       parameters: {
@@ -641,7 +641,7 @@ app.post("/", async (c) => {
     type: "function",
   };
 
-  agent.tool = tool_sendOrderPackageBySms;
+  agent.tool = tool_sendSmsOrderSpecialsFavorites;
   // agent.tool = [];
 
   // =================================================================

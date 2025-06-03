@@ -197,7 +197,10 @@ export function formatFavoriteProducts(products: any): string {
   );
 
   // Make sure we're working with the actual data array
-  const productArray = Array.isArray(products) ? products : products.data || [];
+  // Extract the data array if it exists (remove the data wrapper)
+  const productArray = Array.isArray(products)
+    ? products
+    : products?.data || [];
 
   console.log("Extracted product array length:", productArray.length);
 
@@ -225,7 +228,7 @@ export function formatFavoriteProducts(products: any): string {
 
   console.log("Cleaned products:", JSON.stringify(cleanedProducts, null, 2));
 
-  // Format as JSON with proper indentation
+  // Format as JSON with proper indentation - directly use the array without data wrapper
   const formattedFavoriteProductsJson = JSON.stringify(
     cleanedProducts,
     null,

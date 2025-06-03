@@ -41,7 +41,7 @@ import {
   AgentConfig,
   buildPromptFromFile,
   createAssistantConfig,
-  tool_sendOrderPackageBySms,
+  tool_sendSmsOrderSpecialsFavorites,
 } from "./utils/assistantConfig";
 import { makeOutboundCall } from "./utils/vapiService";
 
@@ -63,7 +63,7 @@ app.post("/", async (c) => {
   const { phoneNumberId, assistantId, customerNumber } =
     await c.req.json<any>();
 
-  console.log(
+  // console.log(
     `reorderbot: Received request to place outbound call with 
     phoneNumberId: ${phoneNumberId}, 
     assistantId: ${assistantId}, 
@@ -72,19 +72,20 @@ app.post("/", async (c) => {
 
   // Initialize agent configuration
   const agent: AgentConfig = {};
+  let orderWithTotals: any = null;
 
   try {
     // 1. Fetch tenants for verification/access control
     const tenantsRepository = await getSafeRepository("tenants");
     const tenants = (await tenantsRepository.getAll()) as TenantRow[];
-    console.log("Successfully retrieved tenants:", tenants);
+    // console.log("Successfully retrieved tenants:", tenants);
 
     // 2. Fetch and process customer's last order
     const proposedOrderResult = await fetchCustomerLastOrder(CUSTOMER_ID);
 
     if (proposedOrderResult?.data) {
       // Calculate order totals
-      const orderWithTotals = calculateOrderTotals(proposedOrderResult.data);
+      orderWithTotals = calculateOrderTotals(proposedOrderResult.data);
 
       // Format order components and extract for the agent
       const formattedOrder = formatOrderComponents(orderWithTotals);
@@ -92,9 +93,9 @@ app.post("/", async (c) => {
       agent.xmlCompany = formattedOrder.xmlCompany;
       agent.xmlProposedOrder = formattedOrder.xmlProposedOrder;
 
-      console.log("\nExtracted customer:", agent.xmlCustomer);
-      console.log("\nExtracted company:", agent.xmlCompany);
-      console.log("\nProposed Order:", agent.xmlProposedOrder);
+      // console.log("\nExtracted customer:", agent.xmlCustomer);
+      // console.log("\nExtracted company:", agent.xmlCompany);
+      // console.log("\nProposed Order:", agent.xmlProposedOrder);
     }
 
     // 3. Fetch and process product specials
@@ -106,10 +107,13 @@ app.post("/", async (c) => {
         productSpecialsResult.data
       );
 
+      // console.log(" =1111111111111============================");
+
       // Format product specials for the agent
       agent.xmlProductSpecials = formatProductSpecials(productsWithDiscounts);
-      console.log("\nPromotional Offers:", agent.xmlProductSpecials);
+      // console.log("\nproductsWithDiscounts:", productsWithDiscounts);
     }
+    // console.log(" =111111111111111111============================");
 
     // 4. Fetch and process customer's favorite products
     const customerPreferencesResult = await fetchCustomerPreferences(
@@ -128,18 +132,25 @@ app.post("/", async (c) => {
           favoriteProductIds
         );
 
+        // console.log(" 2222222222222=======================");
+        // console.log(
+          "\nCustomer favoriteProductsResult:",
+          favoriteProductsResult
+        );
+
+        // console.log(" 222222222222222222222======================");
         if (favoriteProductsResult?.data) {
           // Format favorite products for the agent
           agent.xmlFavoriteProducts = formatFavoriteProducts(
-            favoriteProductsResult.data
+            favoriteProductsResult
           );
-          console.log("\nCustomer Favorite Items:", agent.xmlFavoriteProducts);
+          // console.log("\nCustomer Favorite Items:", agent.xmlFavoriteProducts);
         }
       }
     }
 
     // 5. Configure the agent's tools
-    agent.tool = tool_sendOrderPackageBySms;
+    agent.tool = tool_sendSmsOrderSpecialsFavorites;
 
     // 6. Build the agent's prompt from template file
     const agentFilePath = path.join(
@@ -148,11 +159,11 @@ app.post("/", async (c) => {
     );
 
     agent.prompt = buildPromptFromFile(agentFilePath, agent);
-    console.log("Prompt built successfully");
+    // console.log("Prompt built successfully");
 
     // 7. Create the assistant configuration
     const assistant = createAssistantConfig(agent);
-    console.log("Assistant configuration created"); // 8. Make the outbound call using VAPI
+    // console.log("Assistant configuration created"); // 8. Make the outbound call using VAPI
     const callResponse = await makeOutboundCall({
       phoneNumberId,
       assistant,
@@ -164,7 +175,7 @@ app.post("/", async (c) => {
       id: string;
       [key: string]: any;
     }; // After the call response is received and logged
-    console.log("VAPI call successful:", typedCallResponse.id);
+    // console.log("VAPI call successful (id):", typedCallResponse.id);
 
     // Save the data to the database
     try {
@@ -182,7 +193,7 @@ app.post("/", async (c) => {
           data: productSpecialsResult,
           data_type: "special",
         });
-        console.log("Product specials saved to database");
+        // console.log("Product specials saved to database");
       }
 
       // 2. Save customer preferences/favorites data
@@ -194,7 +205,7 @@ app.post("/", async (c) => {
           data: customerPreferencesResult,
           data_type: "favorites",
         });
-        console.log("Customer preferences saved to database");
+        // console.log("Customer preferences saved to database");
       }
 
       // 3. Save proposed order data
@@ -203,10 +214,10 @@ app.post("/", async (c) => {
           call_id: typedCallResponse.id,
           customer_id: CUSTOMER_ID,
           tenant_id: TENANT_ID,
-          data: proposedOrderResult,
+          data: orderWithTotals,
           data_type: "order",
         });
-        console.log("Last order data saved to database");
+        // console.log("Proposed order data saved to database");
       }
     } catch (saveError) {
       console.error("Error saving data to database:", saveError);

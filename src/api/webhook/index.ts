@@ -31,12 +31,11 @@ app.post("/", async (c) => {
     switch (payload.type) {
       case VapiWebhookEnum.FUNCTION_CALL:
         console.log("func call as alias for tool calls");
-        console.log("payload", payload);
+        // console.log("payload", payload);
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.TOOL_CALLS:
-        console.log("tools call");
-        console.log("payload", payload);
-        process.exit(1); // For debugging purposes, remove this in production
+        console.log("tools call in index.ts");
+        // console.log("payload", payload);
 
         return c.json(await functionCallHandler(payload), 201);
       case VapiWebhookEnum.STATUS_UPDATE:

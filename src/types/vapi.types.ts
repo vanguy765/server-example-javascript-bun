@@ -93,7 +93,7 @@ export type VapiCallStatus = (typeof VAPI_CALL_STATUSES)[number];
 
 export enum VapiWebhookEnum {
   ASSISTANT_REQUEST = "assistant-request",
-  FUNCTION_CALL = "tool-calls",
+  FUNCTION_CALL = "function-call",
   TOOL_CALLS = "tool-calls",
   STATUS_UPDATE = "status-update",
   END_OF_CALL_REPORT = "end-of-call-report",

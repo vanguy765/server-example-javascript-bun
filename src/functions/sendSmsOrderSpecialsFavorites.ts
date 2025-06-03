@@ -47,7 +47,7 @@ interface SmsResponse {
 export const sendSmsOrderSpecialsFavorites = async (
   params: sendSmsOrderSpecialsFavoritesParams
 ): Promise<SmsResponse> => {
-  console.log("Function: sendSmsOrderSpecialsFavorites.ts");
+  console.log("File and Function: sendSmsOrderSpecialsFavorites.ts");
   console.log("Request params:", params);
 
   try {
