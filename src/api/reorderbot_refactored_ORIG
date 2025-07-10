@@ -14,7 +14,6 @@ import { createRepository } from "../supabase/generated-repo";
 import { getSafeRepository } from "./db-utils";
 import * as path from "path";
 import * as fs from "fs";
-import dotenv from "dotenv";
 
 import {
   saveProductSpecials,
@@ -55,9 +54,6 @@ const app = new Hono<{ Bindings: Bindings }>();
 // For development, use a fixed customer ID
 const CUSTOMER_ID = "9d8f7e6d-5c4b-4a2b-8c0d-9e8f7d6c5b4a";
 const TENANT_ID = "f0555d1a-5da7-4d15-b864-a1c6b16458a8";
-const PHONE_NUMBER_ID = "800187f4-d205-401b-a90e-82dba423e4a1"; // Replace
-const PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER; // Replace
-// const ASSISTANT_ID = "vapi_assistant_id"; // Replace
 
 /**
  * POST endpoint to initiate an outbound call
@@ -66,72 +62,13 @@ app.post("/", async (c) => {
   // Extract parameters from request body
   const { phoneNumberId, assistantId, customerNumber } =
     await c.req.json<any>();
+
   // console.log(
-  //   `reorderbot: Received request to place outbound call with
-  //   phoneNumberId: ${phoneNumberId},
-  //   assistantId: ${assistantId},
-  //   customerNumber: ${customerNumber}`
-  // );
+  `reorderbot: Received request to place outbound call with 
+    phoneNumberId: ${phoneNumberId}, 
+    assistantId: ${assistantId}, 
+    customerNumber: ${customerNumber}`;
 
-  // ------------------------------------------------------------------
-
-  // Get the domain from the request
-  let domain = c.req.header("host") || "localhost";
-  console.log("1-Domain:", domain);
-
-  if (
-    domain === "localhost" ||
-    domain === "127.0.0.1" ||
-    domain?.includes("localhost:") ||
-    domain?.includes("127.0.0.1:")
-  ) {
-    domain = "acmecleaning.com";
-  }
-
-  console.log("2-Domain:", domain);
-
-  // Get the last part of the path
-  const pathParts = c.req.path.split("/");
-  const lastPart = pathParts[pathParts.length - 1];
-  console.log("Last part of path:", lastPart);
-  // Get the tenant using the domain`
-
-  // ------------------------------------------------------------------
-
-  const tenantRepository = await getSafeRepository("tenants");
-  const tenant = await tenantRepository
-    .query()
-    .select("*")
-    .eq("domain", domain)
-    .maybeSingle();
-  // console.log("Tenant retrieved:", tenant);
-  if (!tenant || !tenant.data) {
-    return c.json({ message: "Tenant not found for the provided domain" }, 404);
-  }
-
-  // ------------------------------------------------------------------
-
-  // Get the agent (phoneNumberId for Vapi and smsNumber for Twilio)
-  // using the tenantId and the lastPart of the path
-  // const agentRepository = await getSafeRepository("agents");
-  // const agentData = await agentRepository
-  //   .query()
-  //   .select("*")
-  //   .eq("tenant_id", TENANT_ID)
-  //   .eq("name", lastPart)
-  //   .maybeSingle();
-  // // console.log("Agent retrieved:", agentData);
-  // if (!agentData || !agentData.data) {
-  //   return c.json(
-  //     { message: "Agent not found for the provided tenant and path" },
-  //     404
-  //   );
-  // }
-  // const agentId = agentData.data.id;
-  // console.log("Agent ID:", agentId);
-  // console.log("Agent data:", agentData.data);
-
-  // ------------------------------------------------------------------
   // Initialize agent configuration
   const agent: AgentConfig = {};
   let orderWithTotals: any = null;
@@ -195,10 +132,10 @@ app.post("/", async (c) => {
         );
 
         // console.log(" 2222222222222=======================");
-        // console.log(
-        //   "\nCustomer favoriteProductsResult:",
-        //   favoriteProductsResult
-        // );
+        console.log(
+          "\nCustomer favoriteProductsResult:",
+          favoriteProductsResult
+        );
 
         // console.log(" 222222222222222222222======================");
         if (favoriteProductsResult?.data) {
@@ -225,11 +162,7 @@ app.post("/", async (c) => {
 
     // 7. Create the assistant configuration
     const assistant = createAssistantConfig(agent);
-
-    console.log("Assistant configuration created"); // 8. Make the outbound call using VAPI
-    console.log(`assistant: ${assistantId}`);
-    process.exit(1); // For debugging purposes, remove this in production
-
+    // console.log("Assistant configuration created"); // 8. Make the outbound call using VAPI
     const callResponse = await makeOutboundCall({
       phoneNumberId,
       assistant,
@@ -256,12 +189,10 @@ app.post("/", async (c) => {
           call_id: typedCallResponse.id,
           customer_id: CUSTOMER_ID,
           tenant_id: TENANT_ID,
-          sms_number: PHONE_NUMBER,
-          customer_phone: customerNumber,
           data: productSpecialsResult,
           data_type: "special",
         });
-        console.log("Product specials saved to database");
+        // console.log("Product specials saved to database");
       }
 
       // 2. Save customer preferences/favorites data
@@ -270,12 +201,10 @@ app.post("/", async (c) => {
           call_id: typedCallResponse.id,
           customer_id: CUSTOMER_ID,
           tenant_id: TENANT_ID,
-          sms_number: PHONE_NUMBER,
-          customer_phone: customerNumber,
           data: customerPreferencesResult,
           data_type: "favorites",
         });
-        console.log("Customer preferences saved to database");
+        // console.log("Customer preferences saved to database");
       }
 
       // 3. Save proposed order data
@@ -284,22 +213,15 @@ app.post("/", async (c) => {
           call_id: typedCallResponse.id,
           customer_id: CUSTOMER_ID,
           tenant_id: TENANT_ID,
-          sms_number: PHONE_NUMBER,
-          customer_phone: customerNumber,
           data: orderWithTotals,
           data_type: "order",
         });
-        console.log("Proposed order data saved to database");
+        // console.log("Proposed order data saved to database");
       }
-
-      console.log("==========================================");
-      console.log("Outbound call placed.");
-      console.log(`assistant: ${assistantId}`);
     } catch (saveError) {
       console.error("Error saving data to database:", saveError);
       // Continue with the request even if saving fails
     }
-
     // Return the call response to the client
     return c.json(typedCallResponse, 200);
   } catch (error) {

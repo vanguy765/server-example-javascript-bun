@@ -1,6 +1,6 @@
 // Generated Zod schemas from database
 // Source: C:\Users\3900X\Code\vapiordie3\vapiordie3\src\supabase\schema.sql
-// Generated on: 2025-06-01T02:30:01.809Z
+// Generated on: 2025-06-08T21:29:14.885Z
 
 import { z } from 'zod';
 import { Json } from './generated.types';
@@ -610,6 +610,8 @@ export const ProposedOrdersDataSchema = z.object({
   tenant_id: z.any().nullish(),
   data: z.custom<Json>((val) => true).nullish(),
   data_type: z.string().nullish(),
+  customer_phone: z.string().nullish(),
+  sms_number: z.string().nullish(),
 });
 
 export const ProposedOrdersDataInsertSchema = z.object({
@@ -620,6 +622,8 @@ export const ProposedOrdersDataInsertSchema = z.object({
   tenant_id: z.any().nullish().optional(),
   data: z.custom<Json>((val) => true).nullish().optional(),
   data_type: z.string().nullish().optional(),
+  customer_phone: z.string().nullish().optional(),
+  sms_number: z.string().nullish().optional(),
 });
 
 export const ProposedOrdersDataUpdateSchema = z.object({
@@ -630,6 +634,8 @@ export const ProposedOrdersDataUpdateSchema = z.object({
   tenant_id: z.any().nullish().optional(),
   data: z.custom<Json>((val) => true).nullish().optional(),
   data_type: z.string().nullish().optional(),
+  customer_phone: z.string().nullish().optional(),
+  sms_number: z.string().nullish().optional(),
 }).partial();
 
 export const RolesSchema = z.object({

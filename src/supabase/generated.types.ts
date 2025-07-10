@@ -1,6 +1,6 @@
 // Generated from database schema
 // Source: C:\Users\3900X\Code\vapiordie3\vapiordie3\src\supabase\schema.sql
-// Generated on: 2025-06-01T02:30:01.806Z
+// Generated on: 2025-06-08T21:29:14.882Z
 
 export type Json =
   | string
@@ -602,6 +602,8 @@ export interface Database {
           tenant_id: any | null
           data: Json | null
           data_type: string | null
+          customer_phone: string | null
+          sms_number: string | null
         }
         Insert: {
           id?: any | null
@@ -611,6 +613,8 @@ export interface Database {
           tenant_id?: any | null
           data?: Json | null
           data_type?: string | null
+          customer_phone?: string | null
+          sms_number?: string | null
         }
         Update: {
           id?: any | null
@@ -620,6 +624,8 @@ export interface Database {
           tenant_id?: any | null
           data?: Json | null
           data_type?: string | null
+          customer_phone?: string | null
+          sms_number?: string | null
         }
       }
       roles: {

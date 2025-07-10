@@ -74,12 +74,12 @@ export const functionCallHandler = async (
   }
 
   console.log("4 Function Call name:", name);
-
   // Now we have name and parameters, regardless of which format was used
   // Call the appropriate function from our functions map
   if (name && Object.prototype.hasOwnProperty.call(functions, name)) {
     try {
-      return await functions[name](parameters);
+      // Pass both parameters and the full payload to the function
+      return await functions[name](parameters, payload);
     } catch (error) {
       console.error(`Error executing function ${name}:`, error);
       return {

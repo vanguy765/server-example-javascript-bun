@@ -1,6 +1,6 @@
 # Database Schema Analysis
 
-*Auto-generated on 5/31/2025, 7:30:01 PM*
+*Auto-generated on 6/8/2025, 2:29:14 PM*
 
 ## Database Relationships
 
@@ -196,6 +196,8 @@ erDiagram
         uuid DEFAULT gen_random_uuid() NOT NULL tenant_id
         jsonb data
         text data_type
+        text customer_phone
+        text sms_number
     }
     roles {
         uuid DEFAULT gen_random_uuid() NOT NULL id
@@ -508,6 +510,8 @@ Standin for Redis, temporarily holds order, specials and favorites data
 | tenant_id | uuid DEFAULT gen_random_uuid() NOT NULL | ✅ | ❌ |  |  |
 | data | jsonb | ✅ | ❌ |  |  |
 | data_type | text | ✅ | ❌ |  |  |
+| customer_phone | text | ✅ | ❌ |  |  |
+| sms_number | text | ✅ | ❌ |  |  |
 
 ### roles
 

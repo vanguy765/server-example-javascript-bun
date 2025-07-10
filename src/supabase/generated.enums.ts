@@ -1,6 +1,6 @@
 // Generated enum definitions from database schema
 // Source: C:\Users\3900X\Code\vapiordie3\vapiordie3\src\supabase\schema.sql
-// Generated on: 2025-06-01T02:30:01.812Z
+// Generated on: 2025-06-08T21:29:14.890Z
 
 /**
  * Enum type for call_outcome

@@ -225,11 +225,7 @@ app.post("/", async (c) => {
 
     // 7. Create the assistant configuration
     const assistant = createAssistantConfig(agent);
-
-    console.log("Assistant configuration created"); // 8. Make the outbound call using VAPI
-    console.log(`assistant: ${assistantId}`);
-    process.exit(1); // For debugging purposes, remove this in production
-
+    // console.log("Assistant configuration created"); // 8. Make the outbound call using VAPI
     const callResponse = await makeOutboundCall({
       phoneNumberId,
       assistant,
@@ -261,7 +257,7 @@ app.post("/", async (c) => {
           data: productSpecialsResult,
           data_type: "special",
         });
-        console.log("Product specials saved to database");
+        // console.log("Product specials saved to database");
       }
 
       // 2. Save customer preferences/favorites data
@@ -275,7 +271,7 @@ app.post("/", async (c) => {
           data: customerPreferencesResult,
           data_type: "favorites",
         });
-        console.log("Customer preferences saved to database");
+        // console.log("Customer preferences saved to database");
       }
 
       // 3. Save proposed order data
@@ -289,7 +285,7 @@ app.post("/", async (c) => {
           data: orderWithTotals,
           data_type: "order",
         });
-        console.log("Proposed order data saved to database");
+        // console.log("Proposed order data saved to database");
       }
 
       console.log("==========================================");

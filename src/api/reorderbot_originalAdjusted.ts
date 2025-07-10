@@ -744,7 +744,7 @@ app.post("/", async (c) => {
     endCallMessage: "Thanks for your time.",
     endCallFunctionEnabled: true,
     recordingEnabled: false,
-    server: { url: "https://0489-24-86-56-54.ngrok-free.app/api/webhook" },
+    server: { url: "https://d5c1-24-86-56-54.ngrok-free.app/api/webhook" },
   };
 
   assistant.model.messages[0].content = agent.prompt ?? "";

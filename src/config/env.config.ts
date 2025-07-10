@@ -10,6 +10,7 @@ export const envConfig = {
   vapi: {
     baseUrl: process.env.VAPI_BASE_URL ?? "https://api.vapi.ai",
     apiKey: process.env.VAPI_API_KEY ?? "",
+    webhookServer: process.env.VAPI_WEBHOOK_SERVER ?? "",
   },
   supabase: {
     url: process.env.SUPABASE_URL ?? "",

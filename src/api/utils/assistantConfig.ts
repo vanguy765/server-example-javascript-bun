@@ -7,6 +7,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { envConfig } from "../../config/env.config";
 
 /**
  * Type definition for the agent object containing various data and configurations
@@ -195,11 +196,11 @@ export function createAssistantConfig(agentConfig: AgentConfig) {
   return {
     transcriber: {
       provider: "deepgram",
-      keywords: ["Bicky:1"],
+      keywords: ["Alex:1"],
     },
     model: {
       provider: "openai",
-      model: "gpt-4",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -213,12 +214,12 @@ export function createAssistantConfig(agentConfig: AgentConfig) {
       voiceId: "onyx",
     },
     voicemailMessage:
-      "Hi, this is Jennifer from Bicky Realty. We were just calling to let you know...",
+      "Hi, this is  Alex, your AI sales assistant from Acme Cleaning Supply Inc. We were just calling to check the supply levels of items from your last order so you don't get caught short.",
     firstMessage:
       "Hello, this is Alex, your AI sales assistant from Acme Cleaning Supply Inc.",
     endCallMessage: "Thanks for your time.",
     endCallFunctionEnabled: true,
     recordingEnabled: false,
-    server: { url: "https://0746-24-86-56-54.ngrok-free.app/api/webhook" },
+    server: { url: `${envConfig.vapi.webhookServer}/api/webhook` },
   };
 }

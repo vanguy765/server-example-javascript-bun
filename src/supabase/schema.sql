@@ -3765,7 +3765,9 @@ CREATE TABLE public.proposed_orders_data (
     customer_id uuid DEFAULT gen_random_uuid() NOT NULL,
     tenant_id uuid DEFAULT gen_random_uuid() NOT NULL,
     data jsonb,
-    data_type text
+    data_type text,
+    customer_phone text,
+    sms_number text
 );
 
 

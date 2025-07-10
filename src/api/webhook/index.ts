@@ -23,10 +23,13 @@ app.post("/", async (c) => {
   // }
   const reqBody: any = await c.req.json();
   const payload: VapiPayload = reqBody.message;
+
   console.log("Webhook received: ", payload.type);
+  console.log("Webhook received: ", payload);
+
   try {
-    // const reqBody: any = await c.req.json();
-    // const payload: VapiPayload = reqBody.message;
+    const reqBody: any = await c.req.json();
+    const payload: VapiPayload = reqBody.message;
 
     switch (payload.type) {
       case VapiWebhookEnum.FUNCTION_CALL:

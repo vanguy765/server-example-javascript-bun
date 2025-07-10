@@ -1,7 +1,7 @@
 [
   {
     "name": "sendSmsOrderSpecialsFavorites",
-    "description": "Sends an initial package of information (Proposed Order based on last order, Special Products, Favorite Products) to the customer's phone via SMS. The data is retrieved from the database using the callId.",
+    "description": "Sends an initial package of information (Proposed Order based on last order, Favorite Products, Special Products) to the customer's phone via SMS..",
     "parameters": {
       "type": "function",
       "properties": {},
@@ -21,6 +21,9 @@
         }
       },
       "required": ["status"]
+    },
+    "server": {
+      "url": "https://d5c1-24-86-56-54.ngrok-free.app/api/webhook"
     }
   },
   {

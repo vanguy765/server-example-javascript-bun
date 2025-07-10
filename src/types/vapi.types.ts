@@ -158,7 +158,10 @@ export interface TranscriptPayload {
   transcript: string;
 }
 
-export interface VapiCall {}
+export interface VapiCall {
+  id: string;
+  // Add any other properties that might exist in the call object
+}
 export interface ToolCallsPayload extends BaseVapiPayload {
   type: VapiWebhookEnum.TOOL_CALLS;
   toolCalls: Array<{
